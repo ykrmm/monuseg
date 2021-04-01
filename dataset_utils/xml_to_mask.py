@@ -111,7 +111,7 @@ def he_to_binary_mask(root_img,root_ann,color_root,binary_root,filename=None,plo
     if not os.path.exists(color_root):
         os.makedirs(color_root)
 
-    print(np.unique(binary_mask))
+    #print(np.unique(binary_mask))
     im_mask = Image.fromarray((binary_mask).astype(np.uint8))
     im_color_mask = Image.fromarray((color_mask).astype(np.uint8))
     im_mask.save(join(binary_root,filename+'.png'))
@@ -138,7 +138,7 @@ def main():
     binary_root = args.binary_root
 
 
-    root = '/Users/ykarmim/Documents/Recherche/Equivariance/code/monuseg/datasets/MoNuSegTrainingData'
+    root = '/share/DEEPLEARNING/datasets/monuseg/MoNuSegTestData'
     root_img = join(root,'Tissue_Images')
     root_ann = join(root,'Annotations')
     color_root = join(root,'Color_masks')
