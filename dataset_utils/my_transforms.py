@@ -45,8 +45,8 @@ class RandomResize(object):
         return image, target
 
 class RandomRotate(object):
-    def __init__(self,angle,p_rotate):
-        self.angle = angle
+    def __init__(self,angle_max,p_rotate):
+        self.angle = angle_max
         self.p_rotate = p_rotate
 
     def __call__(self,image,mask):
