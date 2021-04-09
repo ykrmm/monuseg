@@ -8,8 +8,7 @@ from argparse import ArgumentParser
 import torch.utils.data as tud
 import argparse
 from eval_train import create_save_directory,save_hparams
-import sys
-import os
+from model import CNN3
 # CONSTANTS
 
 
@@ -84,8 +83,11 @@ def main():
         model = models.segmentation.fcn_resnet101(pretrained=args.pretrained,num_classes=N_CLASSES)
     elif args.model.upper()=='DLV3':
         model = models.segmentation.deeplabv3_resnet101(pretrained=args.pretrained,num_classes=N_CLASSES)
+    elif args.model.upper()=='CNN3':
+        print('CAREFUL! If you use the model CNN3, the input size MUST BE 51.')
+        model = CNN3()
     else:
-        raise Exception('model must be "FCN" or "DLV3"')
+        raise Exception('model must be "FCN" , "CNN3" or "DLV3"')
     model.to(device)
     # ------------
     # data augmentation

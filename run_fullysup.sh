@@ -1,1 +1,1 @@
-python3 train_fully_supervised.py --learning_rate 10e-3 --batch_size 12 --n_epochs 100 --model DLV3 --rotate False --scale False --size_img 100 --size_crop 90 --gpu 3 --split False --entire_image True --save_best True
+python3 train_fully_supervised.py --learning_rate 10e-3 --batch_size 12 --n_epochs 100 --model DLV3 --rotate False --scale False --size_img 60 --size_crop 51 --gpu 3 --split False --entire_image False --save_best True
