@@ -67,11 +67,13 @@ def save_model(model,save_all_ep,save_best,save_folder,model_name,ep=None,iou=No
             save = os.path.join(save_folder,save_model)
             torch.save(model,save)
         else:
+
             if iou > max(iou_test[:len(iou_test)-1]):
                 print('New saving, better IoU found')
                 save_model = model_name+'.pt'
                 save = os.path.join(save_folder,save_model)
                 torch.save(model,save)
+
     else:
         save_model = model_name+'.pt'
         save = os.path.join(save_folder,save_model)

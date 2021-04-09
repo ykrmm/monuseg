@@ -6,8 +6,8 @@ import torch.nn as nn
 import numpy as np
 import random 
 from matplotlib import colors
-from save import save_curves,save_model 
-from utils import compute_transformations_batch,compute_scale_equiv_batch,eval_accuracy_equiv
+from .save import save_curves,save_model 
+from .utils import compute_transformations_batch,compute_scale_equiv_batch,eval_accuracy_equiv
 
 
 ##############
@@ -36,10 +36,7 @@ def step_train_supervised(model,train_loader,criterion,optimizer,device='cpu',nu
         try:
             mask_pred = mask_pred['out'] 
         except:
-            print('')   
-        #print(mask_pred)
-        #print("UNIQUE",torch.unique(mask_pred.argmax(dim=1)))
-        #print("SIZE",mask_pred.size())
+            mask_pred = mask_pred['out']    
         loss = criterion(mask_pred, mask)
         loss.backward()
         optimizer.step()
@@ -73,7 +70,7 @@ def eval_model(model,val_loader,device='cpu',num_classes=21):
             try:
                 mask_pred = mask_pred['out'] 
             except:
-                print('')
+                mask_pred = mask_pred
             return mask_pred, mask
 
     val_evaluator = Engine(evaluate_function)
@@ -135,7 +132,7 @@ def train_fully_supervised(model,n_epochs,train_loader,val_loader,criterion,opti
         loss_train.append(loss)
         iou_train.append(iou)
         accuracy_train.append(acc)
-        print('TRAIN - EP:',ep,'iou:',iou,'Accuracy:',acc,'Loss CE',loss)
+        print('TRAIN - EP:',ep,'iou:',iou,'Accuracy:',acc,'Loss CE',loss,'Dice Coeff',dice_coeff,'F1 Score',F1,'Precision',precision,'Recall',recall)
         if scheduler:
             lr_scheduler.step()
         #Eval model
@@ -154,10 +151,10 @@ def train_fully_supervised(model,n_epochs,train_loader,val_loader,criterion,opti
             loss_test.append(loss)
             iou_test.append(iou)
             accuracy_test.append(acc)
-            print('TEST - EP:',ep,'iou:',iou,'Accuracy:',acc,'Loss CE',loss)
+            print('TEST - EP:',ep,'iou:',iou,'Accuracy:',acc,'Loss CE',loss,'Dice Coeff',dice_coeff,'F1 Score',F1,'Precision',precision,'Recall',recall)
         
         ## Save model
-        save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=iou,iou_test=iou_test)
+        save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=iou,iou_test=iou_test) # Save b
 
     save_curves(path=save_folder,loss_train=loss_train,iou_train=iou_train,accuracy_train=accuracy_train\
                                 ,loss_test=loss_test,iou_test=iou_test,accuracy_test=accuracy_test)

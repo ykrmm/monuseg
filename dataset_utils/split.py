@@ -5,7 +5,7 @@ import os
 from os.path import join
 import cv2
 
-train = False
+train = True
 ROOT = '/share/DEEPLEARNING/datasets/monuseg/'
 TRAIN_IMG = join(ROOT,'MoNuSegTrainingData')
 TEST_IMG = join(ROOT,'MoNuSegTestData')
@@ -19,8 +19,10 @@ else:
     MASKS_DIR = join(TEST_IMG,'Binary_masks')
     OUTPUT_DIR = join(TEST_IMG,'Output')
     LIST_FILE = join(TEST_IMG,'list.txt')
-TARGET_SIZE = 51 # Size of the generated patch
 
+
+TARGET_SIZE = 100 # Size of the generated patch
+STRIDE = 50
 
 img_paths = glob.glob(os.path.join(IMGS_DIR, "*.tif"))
 mask_paths = glob.glob(os.path.join(MASKS_DIR, "*.png"))
@@ -35,8 +37,8 @@ for i, (img_path, mask_path) in enumerate(zip(img_paths, mask_paths)):
     mask = cv2.imread(mask_path)
     assert img_filename == mask_filename and img.shape[:2] == mask.shape[:2]
     k = 0
-    for y in range(0, img.shape[0], TARGET_SIZE):
-        for x in range(0, img.shape[1], TARGET_SIZE):
+    for y in range(0, img.shape[0], STRIDE):
+        for x in range(0, img.shape[1], STRIDE):
             img_tile = img[y:y + TARGET_SIZE, x:x + TARGET_SIZE]
             mask_tile = mask[y:y + TARGET_SIZE, x:x + TARGET_SIZE]
 

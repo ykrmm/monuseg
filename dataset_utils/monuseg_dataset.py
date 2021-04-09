@@ -19,16 +19,24 @@ class MoNuSegDataset(Dataset):
                  image_set='train',
                  transforms = None,
                  fixing_rotate = False,
-                 angle_fix = 0):
+                 angle_fix = 0,
+                 mean = (0.485, 0.456, 0.406),
+                 std  = (0.229, 0.224, 0.225),
+                 normalize = True,
+                 load_entire_image = False):
         super(MoNuSegDataset).__init__()
 
         ## Transform
-
+        self.normalize = normalize
+        self.mean = mean
+        self.std = std
         self.fixing_rotate = fixing_rotate # For test time, allow to eval a model on the dataset with a certain angle
         self.angle_fix = angle_fix # The angle used for the fixing rotation
         self.transforms = transforms
 
-        ##
+        ## File loading 
+        self.load_entire_image = load_entire_image
+
         image_set = image_set.lower()
         if image_set!= 'train' and image_set!='test':
             raise Exception("image set should be 'train' or 'test',not",image_set)
@@ -39,7 +47,13 @@ class MoNuSegDataset(Dataset):
         else:
             dataroot = join(dataroot,'MoNuSegTestData')
         self.root_data = join(dataroot,'Output')
-        list_file = join(dataroot, 'list.txt')
+
+        if self.load_entire_image:
+            list_file = join(dataroot, 'list_entire_patch.txt')
+            self.root_img = join(dataroot,'Tissue_Images')
+            self.root_masks = join(dataroot,'Binary_masks')
+        else:
+            list_file = join(dataroot, 'list.txt')
         with open(os.path.join(list_file), "r") as f:
             self.file_names = [x.strip() for x in f.readlines()]
 
@@ -49,16 +63,23 @@ class MoNuSegDataset(Dataset):
             image = TF.rotate(image,angle=self.angle_fix)
             mask = TF.rotate(mask,angle=self.angle_fix)
         
-        image,mask = self.transforms
+        if self.transforms is not None:
+            image,mask = self.transforms(image,mask)
         # Transform to tensor
         image = TF.to_tensor(image)
+        if self.normalize:
+            image = TF.normalize(image,self.mean,self.std)
         mask = to_tensor_target_lc(mask)
         return image, mask
 
 
     def __getitem__(self, index):
-        img = Image.open(os.path.join(self.root_img,self.file_names[index]+'.jpg')).convert('RGB') # Convert RGB ? 
-        target = Image.open(os.path.join(self.root_img,self.file_names[index]+'_m.png'))
+        if self.load_entire_image:
+            img = Image.open(os.path.join(self.root_img,self.file_names[index]+'.tif')).convert('RGB') # Convert RGB ? 
+            target = Image.open(os.path.join(self.root_masks,self.file_names[index]+'.png')).convert('L') # To have (h,w) images 
+        else:
+            img = Image.open(os.path.join(self.root_data,self.file_names[index]+'.jpg')).convert('RGB') # Convert RGB ? 
+            target = Image.open(os.path.join(self.root_data,self.file_names[index]+'_m.png')).convert('L') # To have (h,w) images 
         img, target = self.my_transform(img, target)
         return img, target
 
