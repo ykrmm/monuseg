@@ -5,7 +5,7 @@ import os
 from os.path import join
 import cv2
 
-train = False
+train = True
 ROOT = '/share/DEEPLEARNING/datasets/monuseg/'
 TRAIN_IMG = join(ROOT,'MoNuSegTrainingData')
 TEST_IMG = join(ROOT,'MoNuSegTestData')
