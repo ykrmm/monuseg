@@ -5,7 +5,7 @@ import os
 from os.path import join
 import cv2
 
-train = True
+train = False
 ROOT = '/share/DEEPLEARNING/datasets/monuseg/'
 TRAIN_IMG = join(ROOT,'MoNuSegTrainingData')
 TEST_IMG = join(ROOT,'MoNuSegTestData')
@@ -21,8 +21,8 @@ else:
     LIST_FILE = join(TEST_IMG,'list.txt')
 
 
-TARGET_SIZE = 100 # Size of the generated patch
-STRIDE = 50
+TARGET_SIZE = 51 # Size of the generated patch
+STRIDE = TARGET_SIZE//2
 
 img_paths = glob.glob(os.path.join(IMGS_DIR, "*.tif"))
 mask_paths = glob.glob(os.path.join(MASKS_DIR, "*.png"))

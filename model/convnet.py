@@ -13,22 +13,22 @@ class CNN3(torch.nn.Module): # Inspire of the CNN3 archi of the MoNuSeg challeng
             # 51 x 51
             nn.Conv2d(in_channels=3,out_channels=25,kernel_size=(4,4)), # [48,48]
             nn.ReLU(inplace=True),
-            nn.Dropout2D(p=0.1),
+            nn.Dropout2d(p=0.1),
             nn.MaxPool2d(kernel_size=(2,2)), # [24,24]
             nn.Conv2d(in_channels=25,out_channels=50,kernel_size=(5,5)), # [20,20]
             nn.ReLU(inplace=True),
-            nn.Dropout2D(p=0.2),
+            nn.Dropout2d(p=0.2),
             #nn.MaxPool2d(kernel_size=(2,2)),
             nn.Conv2d(in_channels=50,out_channels=80,kernel_size=(4,4)), # [17,17]
             nn.ReLU(inplace=True),
-            nn.Dropout2D(p=0.25),
+            nn.Dropout2d(p=0.25),
             #nn.MaxPool2d(kernel_size=(2,2))
         )        
         self.conv_classif = nn.Sequential(
             nn.Conv2d(in_channels=80,out_channels=80,kernel_size=(1,1)),
             nn.ReLU(inplace=True),
-            nn.Dropout(p=0.5),
-            nn.Conv2d(in_channels=80,out_channels=3,kernel_size=(1,1))
+            nn.Dropout2d(p=0.5),
+            nn.Conv2d(in_channels=80,out_channels=4,kernel_size=(1,1))
         )
 
         self.upsampling = nn.Sequential(

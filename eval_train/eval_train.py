@@ -36,7 +36,7 @@ def step_train_supervised(model,train_loader,criterion,optimizer,device='cpu',nu
         try:
             mask_pred = mask_pred['out'] 
         except:
-            mask_pred = mask_pred['out']    
+            mask_pred = mask_pred  
         loss = criterion(mask_pred, mask)
         loss.backward()
         optimizer.step()
