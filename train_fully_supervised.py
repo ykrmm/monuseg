@@ -12,7 +12,7 @@ from model import CNN3
 # CONSTANTS
 
 
-N_CLASSES = 4
+
 ### TYPE 
 def str2bool(v):
     if isinstance(v, bool):
@@ -39,6 +39,7 @@ def main():
     parser.add_argument('--batch_size', default=5, type=int)
     parser.add_argument('--n_epochs', default=10, type=int)
     parser.add_argument('--benchmark', default=True, type=str2bool, help="enable or disable backends.cudnn")
+    parser.add_argument('--num_classes', default=3, type=int,help="How many classes for the model")
 
     # Model and eval
     parser.add_argument('--model', default='FCN', type=str,help="FCN or DLV3 model")
@@ -78,6 +79,8 @@ def main():
     # ------------
     # model
     # ------------
+
+    N_CLASSES = args.num_classes
     
     if args.model.upper()=='FCN':
         model = models.segmentation.fcn_resnet101(pretrained=args.pretrained,num_classes=N_CLASSES)

@@ -8,9 +8,11 @@ from PIL import Image
 import random
 import numpy as np
 
-def to_tensor_target_lc(mask):
+def to_tensor_target(mask):
     # For the landcoverdataset
     mask = np.array(mask)
+    mask[mask==2] = 0 # nuclei boundary = background 
+    mask[mask==3] = 0 # nuclei boundary = background 
     return torch.LongTensor(mask)
 
 class MoNuSegDataset(Dataset):
@@ -69,7 +71,7 @@ class MoNuSegDataset(Dataset):
         image = TF.to_tensor(image)
         if self.normalize:
             image = TF.normalize(image,self.mean,self.std)
-        mask = to_tensor_target_lc(mask)
+        mask = to_tensor_target(mask)
         return image, mask
 
 

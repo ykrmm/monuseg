@@ -1,6 +1,6 @@
 
 from ignite.engine import Engine
-from ignite.metrics import ConfusionMatrix,Loss, mIoU,Accuracy,Precision,Recall,DiceCoefficient
+from ignite.metrics import ConfusionMatrix,Loss, mIoU,Accuracy,Precision,Recall,DiceCoefficient,IoU
 import torch 
 import torch.nn as nn
 import numpy as np
@@ -13,7 +13,7 @@ from .utils import compute_transformations_batch,compute_scale_equiv_batch,eval_
 ##############
 
 def get_criterion(key:str,reduction='batchmean') -> dict:
-    d = {'CE':nn.CrossEntropyLoss(ignore_index=21),'KL':nn.KLDivLoss(reduction = reduction, log_target = False),\
+    d = {'CE':nn.CrossEntropyLoss(ignore_index=4),'KL':nn.KLDivLoss(reduction = reduction, log_target = False),\
         'L1':nn.L1Loss(reduction='mean'),'MSE':nn.MSELoss()}
     return d[key]
 ###########################################################################################################################|
@@ -21,7 +21,7 @@ def get_criterion(key:str,reduction='batchmean') -> dict:
 #                                           FULLY SUPERVISED TRAINING
 #--------------------------------------------------------------------------------------------------------------------------|
 ###########################################################################################################################|
-def step_train_supervised(model,train_loader,criterion,optimizer,device='cpu',num_classes=21):
+def step_train_supervised(model,train_loader,criterion,optimizer,device='cpu',num_classes=4):
     """
         A step of fully supervised segmentation model training.
     """
@@ -29,7 +29,7 @@ def step_train_supervised(model,train_loader,criterion,optimizer,device='cpu',nu
     def train_function(engine, batch):
         optimizer.zero_grad()
         model.train()  
-        img,mask = batch       
+        img,mask = batch    
         img = img.to(device)
         mask = mask.to(device)   
         mask_pred = model(img)
@@ -47,6 +47,7 @@ def step_train_supervised(model,train_loader,criterion,optimizer,device='cpu',nu
     train_engine = Engine(train_function)
     cm = ConfusionMatrix(num_classes=num_classes)#,output_transform=output_transform)
     mIoU(cm).attach(train_engine, 'mean IoU')
+    IoU(cm).attach(train_engine,'IoU')
     DiceCoefficient(cm).attach(train_engine, 'dice_coeff')    
     Accuracy().attach(train_engine, "accuracy")
     Loss(loss_fn=nn.CrossEntropyLoss()).attach(train_engine, "CE Loss")
@@ -58,7 +59,7 @@ def step_train_supervised(model,train_loader,criterion,optimizer,device='cpu',nu
     
     return state
     
-def eval_model(model,val_loader,device='cpu',num_classes=21):
+def eval_model(model,val_loader,device='cpu',num_classes=4):
 
     def evaluate_function(engine, batch):
         model.eval()
@@ -76,6 +77,7 @@ def eval_model(model,val_loader,device='cpu',num_classes=21):
     val_evaluator = Engine(evaluate_function)
     cm = ConfusionMatrix(num_classes=num_classes)
     mIoU(cm).attach(val_evaluator, 'mean IoU')
+    IoU(cm).attach(val_evaluator,'IoU')
     DiceCoefficient(cm).attach(val_evaluator, 'dice_coeff')     
     Accuracy().attach(val_evaluator, "accuracy")
     Loss(loss_fn=nn.CrossEntropyLoss())\
@@ -122,11 +124,11 @@ def train_fully_supervised(model,n_epochs,train_loader,val_loader,criterion,opti
             optimizer=optimizer,device=device,num_classes=num_classes)
         iou = state.metrics['mean IoU']
         acc = state.metrics['accuracy']
-        loss = state.metrics['CE Loss'] 
-        dice_coeff = state.metrics['dice_coeff']
-        precision = state.metrics['precision']
-        recall = state.metrics['recall']
-        F1 = (precision * recall * 2 / (precision + recall)).mean()
+        loss = state.metrics['CE Loss']
+        dice_coeff = state.metrics['dice_coeff'].mean().item()
+        precision = state.metrics['precision'].mean().item()
+        recall = state.metrics['recall'].mean().item()
+        F1 = (precision * recall * 2 / (precision + recall))
         dc_train.append(dice_coeff)
         f1_train.append(F1)
         loss_train.append(loss)
@@ -142,10 +144,10 @@ def train_fully_supervised(model,n_epochs,train_loader,val_loader,criterion,opti
             iou = state.metrics['mean IoU']
             acc = state.metrics['accuracy']
             loss = state.metrics['CE Loss']
-            dice_coeff = state.metrics['dice_coeff']
-            precision = state.metrics['precision']
-            recall = state.metrics['recall']
-            F1 = (precision * recall * 2 / (precision + recall)).mean()
+            dice_coeff = state.metrics['dice_coeff'].mean().item()
+            precision = state.metrics['precision'].mean().item()
+            recall = state.metrics['recall'].mean().item()
+            F1 = (precision * recall * 2 / (precision + recall))
             dc_test.append(dice_coeff)
             f1_test.append(F1) 
             loss_test.append(loss)

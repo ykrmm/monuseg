@@ -61,6 +61,7 @@ class RandomRotate(object):
                 angle = np.random.randint(360-self.angle,360)
                 image = F.rotate(image,angle=angle)
                 mask = F.rotate(mask,angle=angle)
+        return image,mask
 
 class RandomPiRotate(object):
     def __init__(self,angle,p_rotate):
