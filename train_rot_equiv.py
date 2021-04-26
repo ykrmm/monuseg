@@ -3,7 +3,7 @@ from dataset_utils import MoNuSegDataset,split_dataset,Compose,RandomResize,Rand
 import torch
 from torchvision import models
 import torch.nn as nn
-from eval_train import train_fully_supervised
+from eval_train import train_rot_equiv
 from argparse import ArgumentParser
 import torch.utils.data as tud
 import argparse
@@ -46,7 +46,10 @@ def main():
     parser.add_argument('--pretrained', default=False, type=str2bool,help="Use pretrained pytorch model")
     parser.add_argument('--eval_angle', default=False, type=str2bool,help=\
         "If true, it'll eval the model with different angle input size")
-
+    parser.add_argument('--gamma', type=float, default=0.5,help="Loss balancing parameters: gamma*loss_equiv + (1-gamma)*loss_sup")
+    parser.add_argument('--eval_every', default=30, type=int,help="Eval all input rotation angle every n step")
+    parser.add_argument('--multi_task', default=False, type=str2bool,help="Multi task training")
+    parser.add_argument('--Loss', default='KL', type=str,help="Loss used for equivariance cost function (KL or CE)")
     # Data augmentation 
     parser.add_argument('--rotate', default=False, type=str2bool,help="Use random rotation as data augmentation")
     parser.add_argument('--scale', default=True, type=str2bool,help="Use scale as data augmentation")
@@ -58,6 +61,7 @@ def main():
     parser.add_argument('--nw', default=0, type=int,help="Num workers for the data loader")
     parser.add_argument('--pm', default=True, type=str2bool,help="Pin memory for the dataloader")
     parser.add_argument('--gpu', default=0, type=int,help="Wich gpu to select for training")
+    parser.add_argument('--rot_cpu', default=False, type=str2bool, help="Apply rotation on the cpu (Help to use less gpu memory)")
     
     # Dataset 
     parser.add_argument('--split', default=False, type=str2bool, help="Split the dataset")
@@ -67,8 +71,8 @@ def main():
     parser.add_argument('--target_size',default=None,type=str,help='Target size used for spliting images.')
     parser.add_argument('--stride',default=None,type=str,help='Stride used for spliting images.')
     # Save parameters
-    parser.add_argument('--model_name', type=str,default="fully_supervised_monuseg",help="what name to use for saving")
-    parser.add_argument('--save_dir', default='/share/homes/karmimy/equiv/save_model/fully_supervised_monuseg', type=str)
+    parser.add_argument('--model_name', type=str,default="rot_equiv_monuseg",help="what name to use for saving")
+    parser.add_argument('--save_dir', default='/share/homes/karmimy/equiv/save_model/rot_equiv_monuseg', type=str)
     parser.add_argument('--save_all_ep', default=False, type=str2bool,help=\
         "If true it'll save the model every epoch in save_dir")
     parser.add_argument('--save_best', default=True, type=str2bool,help="If true will only save the best epoch model")
@@ -129,7 +133,7 @@ def main():
     # dataset and dataloader
     # ------------
 
-    train_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='train',transforms=transforms_train,target_size=args.target_size,stride=args.stride)
+    train_dataset_unsup = MoNuSegDataset(args.dataroot_monuseg,image_set='train',transforms=transforms_train,target_size=args.target_size,stride=args.stride)
     if args.entire_image:
         test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',load_entire_image=True)
     else:
@@ -137,12 +141,21 @@ def main():
 
     
 
+    # Split dataset
     split = args.split
     if split==True:
-        train_dataset = split_dataset(train_dataset,args.split_ratio)
+        train_dataset_sup = split_dataset(train_dataset_unsup,args.split_ratio)
+    else:
+        train_dataset_sup = train_dataset_unsup
+    # Multi task ? 
+    if args.multi_task: 
+        train_dataset_unsup = train_dataset_sup
     # Print len datasets
-    print("There is",len(train_dataset),"images for training and",len(test_dataset),"for validation")
-    dataloader_train = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size,num_workers=args.nw,\
+    print("There is",len(train_dataset_unsup),"images for equivariance training,",len(train_dataset_sup),"for supervised training and",\
+        len(test_dataset),"for validation")
+    dataloader_train_equiv = torch.utils.data.DataLoader(train_dataset_unsup, batch_size=args.batch_size,num_workers=args.nw,\
+        pin_memory=args.pm,shuffle=True,drop_last=True)
+    dataloader_train_sup = torch.utils.data.DataLoader(train_dataset_sup, batch_size=args.batch_size,num_workers=args.nw,\
         pin_memory=args.pm,shuffle=True,drop_last=True)
 
     if args.entire_image:
@@ -170,14 +183,14 @@ def main():
     # training
     # ------------
     print('N_CLASSES',N_CLASSES)
-    criterion = nn.CrossEntropyLoss(ignore_index=N_CLASSES) # On ignore la classe border.
+    criterion_supervised = nn.CrossEntropyLoss(ignore_index=N_CLASSES) # On ignore la classe border.
     optimizer = torch.optim.SGD(model.parameters(),lr=args.learning_rate,momentum=args.moment,weight_decay=args.wd)
-    train_fully_supervised(model=model,n_epochs=args.n_epochs,train_loader=dataloader_train,val_loader=dataloader_val,\
-        criterion=criterion,optimizer=optimizer,save_folder=save_dir,scheduler=args.scheduler,model_name=args.model_name,\
-            benchmark=args.benchmark, save_best=args.save_best,save_all_ep=args.save_all_ep,device=device,num_classes=N_CLASSES)
 
-
-    
+    train_rot_equiv(model,args.n_epochs,dataloader_train_sup,train_dataset_unsup,dataloader_val,criterion_supervised,optimizer,\
+        scheduler=args.scheduler,Loss=args.Loss,gamma=args.gamma,batch_size=args.batch_size,save_folder=save_dir,\
+            model_name=args.model_name,benchmark=args.benchmark,angle_max=args.angle_max,\
+        eval_every=args.eval_every,save_all_ep=args.save_all_ep,save_best=args.save_best\
+            ,rot_cpu=args.rot_cpu,device=device,num_classes=N_CLASSES)
 
 
 if __name__ == '__main__':

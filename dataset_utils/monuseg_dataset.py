@@ -11,8 +11,7 @@ import numpy as np
 def to_tensor_target(mask):
     # For the landcoverdataset
     mask = np.array(mask)
-    mask[mask==2] = 0 # nuclei boundary = background 
-    mask[mask==3] = 0 # nuclei boundary = background 
+    mask = np.where(mask > 1, 0, mask) 
     return torch.LongTensor(mask)
 
 class MoNuSegDataset(Dataset):
@@ -25,7 +24,9 @@ class MoNuSegDataset(Dataset):
                  mean = (0.485, 0.456, 0.406),
                  std  = (0.229, 0.224, 0.225),
                  normalize = True,
-                 load_entire_image = False):
+                 load_entire_image = False,
+                 target_size=None,
+                 stride = None):
         super(MoNuSegDataset).__init__()
 
         ## Transform
@@ -48,14 +49,20 @@ class MoNuSegDataset(Dataset):
             dataroot = join(dataroot,'MoNuSegTrainingData')
         else:
             dataroot = join(dataroot,'MoNuSegTestData')
-        self.root_data = join(dataroot,'Output')
+        if target_size is not None and stride is not None:
+            self.root_data = join(dataroot,'Output_'+target_size+'_'+stride)
+        else: 
+            self.root_data = join(dataroot,'Output')
 
         if self.load_entire_image:
             list_file = join(dataroot, 'list_entire_patch.txt')
             self.root_img = join(dataroot,'Tissue_Images')
             self.root_masks = join(dataroot,'Binary_masks')
         else:
-            list_file = join(dataroot, 'list.txt')
+            if target_size is not None and stride is not None:
+                list_file = join(dataroot, 'list_'+target_size+'_'+stride+'.txt')
+            else: 
+                list_file = join(dataroot, 'list.txt')
         with open(os.path.join(list_file), "r") as f:
             self.file_names = [x.strip() for x in f.readlines()]
 

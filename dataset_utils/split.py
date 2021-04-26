@@ -6,23 +6,24 @@ from os.path import join
 import cv2
 
 train = True
+TARGET_SIZE = 120 # Size of the generated patch
+STRIDE = TARGET_SIZE//2
 ROOT = '/share/DEEPLEARNING/datasets/monuseg/'
 TRAIN_IMG = join(ROOT,'MoNuSegTrainingData')
 TEST_IMG = join(ROOT,'MoNuSegTestData')
 if train:
     IMGS_DIR = join(TRAIN_IMG,'Tissue_Images')
     MASKS_DIR = join(TRAIN_IMG,'Binary_masks')
-    OUTPUT_DIR = join(TRAIN_IMG,'Output')
-    LIST_FILE = join(TRAIN_IMG,'list.txt') # list of all generated patch
+    OUTPUT_DIR = join(TRAIN_IMG,'Output_'+str(TARGET_SIZE)+'_'+str(STRIDE))
+    LIST_FILE = join(TRAIN_IMG,'list_'+str(TARGET_SIZE)+'_'+str(STRIDE)+'.txt') # list of all generated patch
 else:
     IMGS_DIR = join(TEST_IMG,'Tissue_Images')
     MASKS_DIR = join(TEST_IMG,'Binary_masks')
-    OUTPUT_DIR = join(TEST_IMG,'Output')
-    LIST_FILE = join(TEST_IMG,'list.txt')
+    OUTPUT_DIR = join(TEST_IMG,'Output_'+str(TARGET_SIZE)+'_'+str(STRIDE))
+    LIST_FILE = join(TEST_IMG,'list_'+str(TARGET_SIZE)+'_'+str(STRIDE)+'.txt') # list of all generated patch
 
 
-TARGET_SIZE = 51 # Size of the generated patch
-STRIDE = TARGET_SIZE//2
+
 
 img_paths = glob.glob(os.path.join(IMGS_DIR, "*.tif"))
 mask_paths = glob.glob(os.path.join(MASKS_DIR, "*.png"))

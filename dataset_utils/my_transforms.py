@@ -47,20 +47,21 @@ class RandomResize(object):
         return image, target
 
 class RandomRotate(object):
-    def __init__(self,angle_max,p_rotate):
+    def __init__(self,angle_max,p_rotate,expand):
         self.angle = angle_max
         self.p_rotate = p_rotate
+        self.expand = expand
 
     def __call__(self,image,mask):
         if random.random() > self.p_rotate:
             if random.random() > 0.5:
                 angle = np.random.randint(0,self.angle)
-                image = F.rotate(image,angle=angle)
-                mask = F.rotate(mask,angle=angle)
+                image = F.rotate(image,angle=angle,expand=self.expand)
+                mask = F.rotate(mask,angle=angle,expand=self.expand)
             else:
                 angle = np.random.randint(360-self.angle,360)
-                image = F.rotate(image,angle=angle)
-                mask = F.rotate(mask,angle=angle)
+                image = F.rotate(image,angle=angle,expand=self.expand)
+                mask = F.rotate(mask,angle=angle,expand=self.expand)
         return image,mask
 
 class RandomPiRotate(object):
