@@ -40,7 +40,8 @@ def main():
     parser.add_argument('--n_epochs', default=10, type=int)
     parser.add_argument('--benchmark', default=True, type=str2bool, help="enable or disable backends.cudnn")
     parser.add_argument('--num_classes', default=3, type=int,help="How many classes for the model")
-
+    parser.add_argument('--trainable_backbone', default=3, type=int,help="number of trainable (not frozen) resnet layers starting \
+        from final block. Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.")
     # Model and eval
     parser.add_argument('--model', default='FCN', type=str,help="FCN or DLV3 model")
     parser.add_argument('--pretrained', default=False, type=str2bool,help="Use pretrained pytorch model")
@@ -91,6 +92,9 @@ def main():
     elif args.model.upper()=='CNN3':
         print('CAREFUL! If you use the model CNN3, the input size MUST BE 51.')
         model = CNN3()
+    elif args.model.upper()=='MASKRCNN':
+        model = models.detection.maskrcnn_resnet50_fpn(pretrained=args.pretrained,retrained=False, progress=True,\
+             num_classes=N_CLASSES, pretrained_backbone=True, trainable_backbone_layers=args.trainable_backbone)
     else:
         raise Exception('model must be "FCN" , "CNN3" or "DLV3"')
     model.to(device)
