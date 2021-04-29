@@ -11,7 +11,7 @@ import numpy as np
 def to_tensor_target(mask):
     # For the landcoverdataset
     mask = np.array(mask)
-    mask = np.where(mask > 2, 0, mask) 
+    mask = np.where(mask > 1, 0, mask) 
     return torch.LongTensor(mask)
 
 class MoNuSegDataset(Dataset):
