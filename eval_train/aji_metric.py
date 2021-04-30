@@ -15,8 +15,6 @@ class AJI_Metrics(object):
         # Generate the markers as local maxima of the distance to the background
         intersection = 0
         union = 0
- 
-
         pred = pred.squeeze()
         gt = gt.squeeze()
         pred_np = pred.argmax(dim=0).detach().cpu().numpy()
@@ -41,4 +39,5 @@ class AJI_Metrics(object):
 
 
         
-    
+        for g in labels_gt:
+            
