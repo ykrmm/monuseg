@@ -1,1 +1,1 @@
-python3 find_best_model.py --folder /share/homes/karmimy/equiv/save_model/fully_supervised_monuseg --split True --split_ratio 0.3 --rotate False
+python3 find_best_model.py --folder /share/homes/karmimy/equiv/save_model/rot_equiv_monuseg/ --rotate True

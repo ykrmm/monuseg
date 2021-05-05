@@ -29,21 +29,15 @@ class AJI_Metrics(object):
         markers, _ = ndi.label(mask)
         labels_pred = watershed(-distance, markers, mask=pred_np)
 
-        # Watershed ground truth
-        distance = ndi.distance_transform_edt(gt)
-        coords = peak_local_max(distance, footprint=np.ones((3, 3)), labels=gt)
-        mask = np.zeros(distance.shape, dtype=bool)
-        mask[tuple(coords.T)] = True
-        markers, _ = ndi.label(mask)
-        labels_gt = watershed(-distance, markers, mask=gt) # Probleme --> Watershed devrait être utiliser que pour les prédictions pas pour la GT 
+
         
 
         markers_pred = np.zeros(np.shape(np.unique(labels_pred)))  # 0 if unmarked 1 if marked 
-        list_g = np.unique(labels_gt)
+        list_g = np.unique(gt)
         markers_pred[0] = 1 # Mark background as used
         
         for g in list_g[1:]: # Don't take the label 0 (background)
-            mask_g = np.where(labels_gt!=g,0,labels_gt)
+            mask_g = np.where(gt!=g,0,gt)
             res = np.where(mask_g == g ) # Coord where the nuclei g is in the ground truth mask 
             overlap = []
             for i in range(len(res[0])):
@@ -58,11 +52,8 @@ class AJI_Metrics(object):
             for i,s in enumerate(overlap):
                 if markers_pred[s] ==0:
                     mask_s = np.where(labels_pred!=s,0,labels_pred)
-                    mask_s = np.where(mask_s==s,g,mask_s)
-                    inter = np.logical_and(mask_g, mask_s)
-                    u = np.logical_or(mask_g, mask_s)
-                    inter = np.sum(inter)
-                    u = np.sum(u)
+                    inter = len(np.where((mask_g>0) & (mask_s>0))[0])
+                    u = len(np.where((mask_g>0) & (mask_s>0))[0])
                     l_inter.append(inter)
                     l_union.append(u)
                     iou_score = inter / u
@@ -81,7 +72,7 @@ class AJI_Metrics(object):
                 union += l_union[best]
                 markers_pred[best_s] = 1 # Mark the best nuclei used
             except:
-                occurence = np.count_nonzero(labels_gt ==g) # If overlap is empty, then its a false positive 
+                occurence = np.count_nonzero(gt ==g) # If overlap is empty, then its a false positive 
                 union+= occurence
                 print('Overlap nuclei list of nuclei',g,'is empty')
 

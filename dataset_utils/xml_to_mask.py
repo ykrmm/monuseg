@@ -156,13 +156,13 @@ def main():
     binary_root = args.binary_root
 
 
-    root = '/Users/ykarmim/Documents/Recherche/Equivariance/code/monuseg/datasets/MoNuSegTrainingData'
+    root = '/share/DEEPLEARNING/datasets/monuseg/MoNuSegTestData'
     root_img = join(root,'Tissue_Images')
     root_ann = join(root,'Annotations')
     color_root = join(root,'Color_masks')
     binary_root = join(root,'Binary_masks')
     binary_root_instance = join(root,'Binary_masks_instance')
-    color_root_instance = join(root,'Color_masks')
+    color_root_instance = join(root,'Color_masks_instance')
     files = [f for f in listdir(root_img) if isfile(join(root_img, f))]
 
     for f in files: 

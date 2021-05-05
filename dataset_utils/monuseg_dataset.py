@@ -59,7 +59,10 @@ class MoNuSegDataset(Dataset):
         if self.load_entire_image:
             list_file = join(dataroot, 'list_entire_patch.txt')
             self.root_img = join(dataroot,'Tissue_Images')
-            self.root_masks = join(dataroot,'Binary_masks')
+            if self.binary:
+                self.root_masks = join(dataroot,'Binary_masks')
+            else:
+                self.root_masks = join(dataroot,'Binary_masks_instance')
         else:
             if target_size is not None and stride is not None:
                 list_file = join(dataroot, 'list_'+target_size+'_'+stride+'.txt')
@@ -69,6 +72,7 @@ class MoNuSegDataset(Dataset):
             self.file_names = [x.strip() for x in f.readlines()]
 
     def my_transform(self, image, mask):
+        mask = to_tensor_target(mask,binary=self.binary)
         # Apply a fixed rotation for test time:
         if self.fixing_rotate:
             image = TF.rotate(image,angle=self.angle_fix)
@@ -80,14 +84,17 @@ class MoNuSegDataset(Dataset):
         image = TF.to_tensor(image)
         if self.normalize:
             image = TF.normalize(image,self.mean,self.std)
-        mask = to_tensor_target(mask,binary=self.binary)
+        
         return image, mask
 
 
     def __getitem__(self, index):
         if self.load_entire_image:
             img = Image.open(os.path.join(self.root_img,self.file_names[index]+'.tif')).convert('RGB') # Convert RGB ? 
-            target = Image.open(os.path.join(self.root_masks,self.file_names[index]+'.png')).convert('L') # To have (h,w) images 
+            if self.binary:
+                target = Image.open(os.path.join(self.root_masks,self.file_names[index]+'.png')).convert('L') # To have (h,w) images 
+            else:
+                target = np.load(os.path.join(self.root_masks,self.file_names[index]+'.npy'))
         else:
             img = Image.open(os.path.join(self.root_data,self.file_names[index]+'.jpg')).convert('RGB') # Convert RGB ? 
             target = Image.open(os.path.join(self.root_data,self.file_names[index]+'_m.png')).convert('L') # To have (h,w) images 
