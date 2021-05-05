@@ -19,10 +19,11 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-def poly2mask(vertex_row_coords, vertex_col_coords, shape):
+def poly2mask(vertex_row_coords, vertex_col_coords, shape,value):
     fill_row_coords, fill_col_coords = draw.polygon(vertex_row_coords, vertex_col_coords, shape)
     mask = np.zeros(shape, dtype=np.bool)
-    mask[fill_row_coords, fill_col_coords] = True
+    mask[fill_row_coords, fill_col_coords] = value
+    mask = mask*value
     return mask
 
 def he_to_binary_mask(root_img,root_ann,color_root,binary_root,filename=None,plot=False):
@@ -41,7 +42,7 @@ def he_to_binary_mask(root_img,root_ann,color_root,binary_root,filename=None,plo
     xDoc = tree.getroot()
     regions = xDoc.iter('Region')# get a list of all the region tags
     array_xy = []
-    for i,region in enumerate(regions):
+    for i,region in enumerate(regions): # Region = nuclei 
         #Region = Regions.item(regioni)    # for each region tag
 
         #get a list of all the vertexes (which are in order)
@@ -76,9 +77,9 @@ def he_to_binary_mask(root_img,root_ann,color_root,binary_root,filename=None,plo
         #make a mask and add it to the current mask
         #this addition makes it obvious when more than 1 layer overlap each
         #other, can be changed to simply an OR depending on application.
-        polygon = poly2mask(smaller_x, smaller_y, (nrow, ncol))
-        polygon = polygon*1 # Convert a bool array into 1 and 0 array 
-        binary_mask = binary_mask +  (1 - min(1, np.amin(binary_mask))) * polygon    #
+        polygon = poly2mask(smaller_x, smaller_y, (nrow, ncol),value=i+1) # i+1 -> je ne veux pas de 0
+        #polygon = polygon*1 # Convert a bool array into 1 and 0 array 
+        binary_mask = binary_mask +  np.where((polygon > 0) & ( binary_mask > 0),0,polygon)    # Where overlap -> 0 
         # binary_mask = binary_mask + i @ (1 - min(1, np.amin(binary_mask))) * polygon
         color_mask = color_mask + np.stack((np.random.rand() * polygon, np.random.rand()* polygon, np.random.rand() * polygon))
         #binary mask for all objects
@@ -138,7 +139,7 @@ def main():
     binary_root = args.binary_root
 
 
-    root = '/share/DEEPLEARNING/datasets/monuseg/MoNuSegTestData'
+    root = '/Users/ykarmim/Documents/Recherche/Equivariance/code/monuseg/datasets/MoNuSegTrainingData'
     root_img = join(root,'Tissue_Images')
     root_ann = join(root,'Annotations')
     color_root = join(root,'Color_masks')
