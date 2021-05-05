@@ -21,12 +21,12 @@ def str2bool(v):
 
 def poly2mask(vertex_row_coords, vertex_col_coords, shape,value):
     fill_row_coords, fill_col_coords = draw.polygon(vertex_row_coords, vertex_col_coords, shape)
-    mask = np.zeros(shape, dtype=np.bool)
+    mask = np.zeros(shape, dtype=np.int)
     mask[fill_row_coords, fill_col_coords] = value
-    mask = mask*value
     return mask
 
-def he_to_binary_mask(root_img,root_ann,color_root,binary_root,filename=None,plot=False):
+def he_to_binary_mask(root_img,root_ann,color_root,binary_root,binary_root_instance,color_root_instance,\
+    filename=None,plot=False,instance=False):
     """
     Convert XML annotation file to a mask image. 
     root_img : root of the TIF images from the MoNuSegDataset
@@ -77,7 +77,11 @@ def he_to_binary_mask(root_img,root_ann,color_root,binary_root,filename=None,plo
         #make a mask and add it to the current mask
         #this addition makes it obvious when more than 1 layer overlap each
         #other, can be changed to simply an OR depending on application.
-        polygon = poly2mask(smaller_x, smaller_y, (nrow, ncol),value=i+1) # i+1 -> je ne veux pas de 0
+        if instance:
+            value = i+1
+        else:
+            value = 1
+        polygon = poly2mask(smaller_x, smaller_y, (nrow, ncol),value=value) # i+1 -> je ne veux pas de 0
         #polygon = polygon*1 # Convert a bool array into 1 and 0 array 
         binary_mask = binary_mask +  np.where((polygon > 0) & ( binary_mask > 0),0,polygon)    # Where overlap -> 0 
         # binary_mask = binary_mask + i @ (1 - min(1, np.amin(binary_mask))) * polygon
@@ -111,13 +115,25 @@ def he_to_binary_mask(root_img,root_ann,color_root,binary_root,filename=None,plo
 
     if not os.path.exists(color_root):
         os.makedirs(color_root)
+    if not os.path.exists(binary_root_instance):
+        os.makedirs(binary_root_instance)
+
+    if not os.path.exists(color_root_instance):
+        os.makedirs(color_root_instance)
 
     #print(np.unique(binary_mask))
-    im_mask = Image.fromarray((binary_mask).astype(np.uint8))
-    im_color_mask = Image.fromarray((color_mask).astype(np.uint8))
-    im_mask.save(join(binary_root,filename+'.png'))
-    im_color_mask.save(join(color_root,filename+'.png'))
-    print('Successful Saving')
+
+    if instance : 
+        np.save(join(binary_root_instance,filename+'.npy'),binary_mask)
+        np.save(join(color_root_instance,filename+'.npy'),color_mask)
+        print('Successful Saving')
+    else:
+
+        im_mask = Image.fromarray((binary_mask).astype(np.uint8))
+        im_color_mask = Image.fromarray((color_mask).astype(np.uint8))
+        im_mask.save(join(binary_root,filename+'.png'))
+        im_color_mask.save(join(color_root,filename+'.png'))
+        print('Successful Saving')
 
 def main():
 
@@ -131,6 +147,7 @@ def main():
     parser.add_argument('--color_root', type=str,help="color_root : Path to the save directory of the color mask")
     parser.add_argument('--binary_root', type=str,help="root_img : Path to the save directory of the binary mask")
     parser.add_argument('--plot', default=False, type=str2bool,help="Plot the generated mask during conversion")
+    parser.add_argument('--instance', default=False, type=str2bool,help="If true, generate an instance segmentation mask")
     args = parser.parse_args()
 
     root_img = args.root_img 
@@ -144,13 +161,15 @@ def main():
     root_ann = join(root,'Annotations')
     color_root = join(root,'Color_masks')
     binary_root = join(root,'Binary_masks')
-
+    binary_root_instance = join(root,'Binary_masks_instance')
+    color_root_instance = join(root,'Color_masks')
     files = [f for f in listdir(root_img) if isfile(join(root_img, f))]
 
     for f in files: 
         f = f[:-4] # Delete the extension
         print('Mask image conversion of the file',f)
-        he_to_binary_mask(root_img,root_ann,color_root,binary_root,filename=f,plot=args.plot)
+        he_to_binary_mask(root_img,root_ann,color_root,binary_root,filename=f,plot=args.plot,instance=args.instance,\
+            binary_root_instance=binary_root_instance,color_root_instance=color_root_instance)
         print('Conversion done and saved in the',binary_root,'directory')
     print('All the XML annotations converted and successfully saved')
 
