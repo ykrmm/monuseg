@@ -8,7 +8,8 @@ import random
 from matplotlib import colors
 from .save import save_curves,save_model 
 from .utils import compute_transformations_batch,compute_scale_equiv_batch,eval_accuracy_equiv
-
+from .aji_metric import AJI_Metrics
+from eval_train import aji_metric
 
 ##############
 
@@ -316,6 +317,28 @@ def train_rot_equiv(model,n_epochs,train_loader_sup,train_dataset_unsup,val_load
 
 
 
+def compute_AJI(model,dataloader_test,device):
+    """
+        Dataloader need to be a batch of 1 image of the 1000x1000 images MoNuSeg
+    """
+    aji_metric = AJI_Metrics()
+    model.eval()
 
+    for batch in dataloader_test:
+        with torch.no_grad():
+            img, mask = batch
+            img = img.to(device)
+            mask = mask.to(device)
+            mask_pred = model(img)
+            try:
+                mask_pred = mask_pred['out'] 
+            except:
+                mask_pred = mask_pred
+
+        aji_metric.add_prediction(mask_pred,mask)
+
+    aji_mean = aji_metric.get_aji()
+    aji = aji_metric.get_all_aji()
+    return aji,aji_mean
 
     

@@ -7,14 +7,14 @@ from torchvision import transforms as T
 from torchvision.transforms import functional as F
 
 
-def pad_if_smaller(img, size, fill=0):
-    min_size = min(img.size)
+def pad_if_smaller(image, size, fill=0):
+    min_size = min(image.size)
     if min_size < size:
-        ow, oh = img.size
+        ow, oh = image.size
         padh = size - oh if oh < size else 0
         padw = size - ow if ow < size else 0
-        img = F.pad(img, (0, 0, padw, padh), fill=fill)
-    return img
+        image = F.pad(image, (0, 0, padw, padh), fill=fill)
+    return image
 
 
 class Compose(object):
@@ -127,4 +127,23 @@ class Normalize(object):
 
     def __call__(self, image, target):
         image = F.normalize(image, mean=self.mean, std=self.std)
+        return image, target
+
+
+class ColorJitter(object):
+    def __init__(self, brightness=0, contrast=0,saturation=0,hue=0):
+        self.brightness = brightness
+        self.contrast = contrast
+        self.saturation = saturation
+        self.hue = hue
+
+    def __call__(self, image, target):
+        if self.brightness is not None:
+            image = F.adjust_brightness(image, self.brightness)
+        if self.contrast is not None:
+            image = F.adjust_contrast(image, self.contrast)
+        if self.saturation is not None:
+            image = F.adjust_saturation(image, self.saturation)
+        if self.hue is not None:
+            image = F.adjust_hue(image, self.hue)
         return image, target

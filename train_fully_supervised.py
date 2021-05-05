@@ -1,3 +1,4 @@
+from dataset_utils.my_transforms import ColorJitter
 from dataset_utils import MoNuSegDataset,split_dataset,Compose,RandomResize,RandomCrop,RandomPiRotate,\
     RandomHorizontalFlip,RandomRotate,CenterCrop,ToTensor,Normalize
 import torch
@@ -56,7 +57,7 @@ def main():
     parser.add_argument('--angle_max', default=360, type=int,help="Max angle for the random rotations")
 
     # Dataloader and gpu
-    parser.add_argument('--nw', default=0, type=int,help="Num workers for the data loader")
+    parser.add_argument('--nw', default=4, type=int,help="Num workers for the data loader")
     parser.add_argument('--pm', default=True, type=str2bool,help="Pin memory for the dataloader")
     parser.add_argument('--gpu', default=0, type=int,help="Wich gpu to select for training")
     
@@ -112,19 +113,23 @@ def main():
     else:
         resize = 1
         size_max=size_max=size_img*resize
+
+    jitter = 0.5
     if args.rotate:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
         RandomRotate(angle_max=args.angle_max,p_rotate=0.25,expand=True),
         RandomCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
+        ColorJitter(brightness=jitter,contrast=jitter,saturation=jitter,hue=0),
         ]
         )
     else:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
         RandomCrop(size_crop),
-        RandomHorizontalFlip(flip_prob=0.5)
+        RandomHorizontalFlip(flip_prob=0.5),
+        ColorJitter(brightness=jitter,contrast=jitter,saturation=jitter,hue=0)
         ])
         
 
