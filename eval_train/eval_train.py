@@ -7,7 +7,7 @@ import numpy as np
 import random 
 from matplotlib import colors
 from .save import save_curves,save_model 
-from .utils import compute_transformations_batch,compute_scale_equiv_batch,eval_accuracy_equiv
+from .utils import  compute_transformations_batch,eval_accuracy_equiv,watershed_prediction
 from .aji_metric import AJI_Metrics
 from eval_train import aji_metric
 
@@ -317,7 +317,7 @@ def train_rot_equiv(model,n_epochs,train_loader_sup,train_dataset_unsup,val_load
 
 
 
-def compute_AJI(model,dataloader_test,device):
+def compute_AJI(model,dataloader_test,device,clean_prediction=False,threshold=54,dist_factor=0.3):
     """
         Dataloader need to be a batch of 1 image of the 1000x1000 images MoNuSeg
     """
@@ -335,7 +335,10 @@ def compute_AJI(model,dataloader_test,device):
             except:
                 mask_pred = mask_pred
 
-        aji_metric.add_prediction(mask_pred,mask)
+        labels_pred = watershed_prediction(mask_pred,clean_prediction=clean_prediction,threshold=threshold,\
+            dist_factor=dist_factor)
+
+        aji_metric.add_prediction(labels_pred,mask)
 
     aji_mean = aji_metric.get_aji()
     aji = aji_metric.get_all_aji()

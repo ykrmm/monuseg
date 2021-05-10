@@ -42,6 +42,7 @@ def he_to_binary_mask(root_img,root_ann,color_root,binary_root,binary_root_insta
     xDoc = tree.getroot()
     regions = xDoc.iter('Region')# get a list of all the region tags
     array_xy = []
+    
     for i,region in enumerate(regions): # Region = nuclei 
         #Region = Regions.item(regioni)    # for each region tag
 
@@ -60,7 +61,7 @@ def he_to_binary_mask(root_img,root_ann,color_root,binary_root,binary_root_insta
             
             xy.append([x, y])        # finally save them into the array
         array_xy.append(xy)
-
+    print('LEN DE REGION',i)
     array_xy = np.array(array_xy)  
     im = Image.open(im_file)
     ncol,nrow = im.size
@@ -68,6 +69,7 @@ def he_to_binary_mask(root_img,root_ann,color_root,binary_root,binary_root_insta
     color_mask = np.zeros((3,nrow, ncol))
 
     #mask_final = [];
+    print('LEN DE ARRAY_XY',len(array_xy))
     for i,r in enumerate(array_xy):    #for each region
         #print('Processing object # %d \\n', i)
         smaller_x = np.array(r)[:,0] 
@@ -89,7 +91,7 @@ def he_to_binary_mask(root_img,root_ann,color_root,binary_root,binary_root_insta
         #binary mask for all objects
         #imshow(ditance_transform)
 
-
+    
 
     binary_mask = binary_mask.T
     binary_mask = binary_mask.astype(int)
@@ -108,32 +110,34 @@ def he_to_binary_mask(root_img,root_ann,color_root,binary_root,binary_root_insta
         plt.imshow(color_mask)
 
         plt.show()
-
+    
     print('Saving the generated mask',filename,'in',binary_root)
-    if not os.path.exists(binary_root):
-        os.makedirs(binary_root)
+    Save = False
+    if Save:
+        if not os.path.exists(binary_root):
+            os.makedirs(binary_root)
 
-    if not os.path.exists(color_root):
-        os.makedirs(color_root)
-    if not os.path.exists(binary_root_instance):
-        os.makedirs(binary_root_instance)
+        if not os.path.exists(color_root):
+            os.makedirs(color_root)
+        if not os.path.exists(binary_root_instance):
+            os.makedirs(binary_root_instance)
 
-    if not os.path.exists(color_root_instance):
-        os.makedirs(color_root_instance)
+        if not os.path.exists(color_root_instance):
+            os.makedirs(color_root_instance)
 
-    #print(np.unique(binary_mask))
+        #print(np.unique(binary_mask))
+        
+        if instance : 
+            np.save(join(binary_root_instance,filename+'.npy'),binary_mask)
+            np.save(join(color_root_instance,filename+'.npy'),color_mask)
+            print('Successful Saving')
+        else:
 
-    if instance : 
-        np.save(join(binary_root_instance,filename+'.npy'),binary_mask)
-        np.save(join(color_root_instance,filename+'.npy'),color_mask)
-        print('Successful Saving')
-    else:
-
-        im_mask = Image.fromarray((binary_mask).astype(np.uint8))
-        im_color_mask = Image.fromarray((color_mask).astype(np.uint8))
-        im_mask.save(join(binary_root,filename+'.png'))
-        im_color_mask.save(join(color_root,filename+'.png'))
-        print('Successful Saving')
+            im_mask = Image.fromarray((binary_mask).astype(np.uint8))
+            im_color_mask = Image.fromarray((color_mask).astype(np.uint8))
+            im_mask.save(join(binary_root,filename+'.png'))
+            im_color_mask.save(join(color_root,filename+'.png'))
+            print('Successful Saving')
 
 def main():
 

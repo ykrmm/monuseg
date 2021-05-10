@@ -4,6 +4,10 @@ import torch.nn as nn
 from scipy.ndimage.interpolation import rotate as scipy_rotate
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
+from scipy import ndimage as ndi
+from skimage.segmentation import watershed
+from skimage.feature import peak_local_max
+import cv2
 
 ###########################################################################################################################|
 #--------------------------------------------------------------------------------------------------------------------------|
@@ -175,3 +179,56 @@ def eval_accuracy_equiv(model,val_loader,criterion=nn.KLDivLoss(reduction='batch
     m_loss_equiv = np.array(loss_test).mean()
     print("Mean Pixel Accuracy between masks :",m_pix_acc,"Loss Validation :",m_loss_equiv)
     return m_pix_acc, m_loss_equiv
+
+###########################################################################################################################|
+#--------------------------------------------------------------------------------------------------------------------------|
+#                                               WATERSHED POST PROCESSING
+#--------------------------------------------------------------------------------------------------------------------------|
+###########################################################################################################################|
+
+
+def watershed_prediction(pred:torch.Tensor,clean_prediction=False,threshold=54,dist_factor=0.3):
+    """
+        Clean prediction -> float If true it'll remove of the prediction the nuclei that occure less than threshold
+        threshold -> int: Threshold for cleaning predictions
+        dist_factor -> float : Distance factor for the distance map -> It controll the number of nuclei after the watershed process
+    """
+    pred = pred.squeeze()
+    pred_np = pred.argmax(dim=0).detach().cpu().numpy()
+    # noise removal 
+    pred_np =  np.uint8(pred_np)
+    kernel = np.ones((3,3),np.uint8)
+    opening = cv2.morphologyEx(pred_np,cv2.MORPH_OPEN,kernel, iterations = 2)
+
+    # sure background area
+    sure_bg = cv2.dilate(pred_np,kernel,iterations=3)
+
+    # Finding sure foreground area
+    dist_transform = cv2.distanceTransform(opening,cv2.DIST_L2,5)
+    ret, sure_fg = cv2.threshold(dist_transform,dist_factor*dist_transform.max(),255,0)
+
+    # Finding unknown region
+    sure_fg = np.uint8(sure_fg)
+    unknown = cv2.subtract(sure_bg,sure_fg)
+    # Marker labelling
+    ret, markers = cv2.connectedComponents(sure_fg)
+    labels_pred = watershed(-dist_transform, markers, mask=pred_np,compactness=10)
+    # Add one to all labels so that sure background is not 0, but 1
+
+    if clean_prediction:
+        labels_pred = clean_prediction(labels_pred,threshold)
+
+    return labels_pred
+
+
+def clean_prediction(labels_pred,threshold):
+    """
+        Function that supress small nuclei predictions under the threshold
+    """
+    count_pred = np.unique(labels_pred,return_counts=True)
+    for i,c in zip(count_pred[0],count_pred[1]):
+        if c <threshold:
+            labels_pred = np.where(labels_pred==i,0,labels_pred)
+
+    
+    return labels_pred
