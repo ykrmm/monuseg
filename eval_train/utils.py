@@ -78,7 +78,7 @@ def compute_transformations_batch(x,model,angle,reshape=False,\
     """
     x = x.to(device)
     if rot_cpu:
-        rot_x,_= rotate_image(x.detach().cpu(),angle=angle,reshape=reshape) 
+        rot_x,_= rotate_pt(x.detach().cpu(),angle=angle,reshape=reshape) 
     else:
         rot_x,_ = rotate_pt(x,angle=angle,reshape=reshape)
     logsoftmax = nn.LogSoftmax(dim=1) #LogSoftmax using instead of softmax then log.
@@ -91,7 +91,7 @@ def compute_transformations_batch(x,model,angle,reshape=False,\
         pred_rot = model(rot_x.to(device))
 
     if rot_cpu:    
-        pred_rot_x = rotate_mask(pred_x.detach().cpu(),angle,reshape=reshape) # CPU rotation 
+        pred_rot_x,_ = rotate_pt(pred_x.detach().cpu(),angle,reshape=reshape) # CPU rotation 
     else:
         pred_rot_x,_ = rotate_pt(pred_x,angle,reshape=reshape) # Apply the rotation on the mask with the original input
 
@@ -104,6 +104,7 @@ def compute_transformations_batch(x,model,angle,reshape=False,\
         loss = criterion(pred_rot_x.cpu(),pred_rot.cpu()) # For loss L1, MSE…    
     acc = float(torch.sum(pred_rot_x.argmax(dim=1).cpu()==pred_rot.argmax(dim=1).cpu())/(pred_rot_x.size()[2]**2))
     # compare the pred on the original images and the pred on the rotated images put back in place
+    
         
         
     return loss,acc  
