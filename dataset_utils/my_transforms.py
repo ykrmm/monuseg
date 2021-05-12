@@ -71,15 +71,17 @@ class RandomRotate(object):
         return image,mask
 
 class RandomPiRotate(object):
-    def __init__(self,angle,p_rotate):
-        self.angle = angle
+    def __init__(self,p_rotate):
         self.p_rotate = p_rotate
 
     def __call__(self,image,mask):
         if random.random() > self.p_rotate:
             angle = int(np.random.choice([90,180,270],1,replace=True)) #Only pi/2 rotation
             image = F.rotate(image,angle=angle)
+            mask = torch.unsqueeze(mask,0)
             mask = F.rotate(mask,angle=angle)
+            mask = mask.squeeze()
+        return image,mask
 
 class RandomHorizontalFlip(object):
     def __init__(self, flip_prob):

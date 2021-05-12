@@ -115,7 +115,8 @@ def main():
     if args.rotate:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
-        RandomRotate(angle_max=args.angle_max,p_rotate=0.25,expand=True),
+        #RandomRotate(angle_max=args.angle_max,p_rotate=0.25,expand=True),
+        RandomPiRotate(p_rotate=0.25),
         RandomCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
         ]
