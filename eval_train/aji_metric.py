@@ -22,14 +22,12 @@ class AJI_Metrics(object):
         gt = gt.squeeze()
         gt = gt.detach().cpu().numpy()
 
-
-        #labels_pred = clean_prediction(labels_pred,self.threshold)
-        print('LEN DE PRED',len(np.unique(labels_pred)))
+        #print('LEN DE PRED',len(np.unique(labels_pred)))
 
 
         markers_pred = np.zeros(np.shape(np.unique(labels_pred)))  # 0 if unmarked 1 if marked 
         list_g = np.unique(gt)
-        print('LEN GT',len(list_g))
+        #print('LEN GT',len(list_g))
         markers_pred[0] = 1 # Mark background as used
         
         for g in list_g[1:]: # Don't take the label 0 (background)
@@ -49,6 +47,7 @@ class AJI_Metrics(object):
             iou = []
             l_inter = []
             l_union = []
+            all_marked = True
             for i,s in enumerate(overlap):
                 if markers_pred[s] ==0:
                     mask_s = np.where(labels_pred!=s,0,labels_pred)
@@ -58,6 +57,7 @@ class AJI_Metrics(object):
                     l_union.append(u)
                     iou_score = inter / u
                     iou.append(iou_score)
+                    all_marked = False # If all overlap object are marked -> then we have to add the GT nuclei to the union
                 else:
                     inter = 0
                     u = 0
@@ -65,6 +65,10 @@ class AJI_Metrics(object):
                     l_union.append(u)
                     iou_score = 0
                     iou.append(iou_score)
+            if all_marked:
+                occurence = np.count_nonzero(gt ==g) # If overlap is only marked nuclei, add the GT to the union 
+                union+= occurence
+                #print('Overlap nuclei list of nuclei',g,'is only marked nuclei')
             try:
                 
                 best = np.argmax(iou)
@@ -79,8 +83,8 @@ class AJI_Metrics(object):
                 print('Overlap nuclei list of nuclei',g,'is empty')
 
         # Add to union every pred segmented nuclei unused
-        print('before union',float(intersection)/float(union))
-        print('Element unmarked',np.count_nonzero(markers_pred == 0),'element in markers_pred',len(markers_pred))
+        #print('before union',float(intersection)/float(union))
+        #print('Element unmarked',np.count_nonzero(markers_pred == 0),'element in markers_pred',len(markers_pred))
         for i,m in enumerate(markers_pred):
             if m ==0 : 
                 occurence = np.count_nonzero(labels_pred ==i)

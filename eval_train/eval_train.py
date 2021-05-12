@@ -317,7 +317,7 @@ def train_rot_equiv(model,n_epochs,train_loader_sup,train_dataset_unsup,val_load
 
 
 
-def compute_AJI(model,dataloader_test,device,clean_prediction=False,threshold=54,dist_factor=0.3):
+def compute_AJI(model,dataloader_test,device,clean_prediction=False,threshold=54,dist_factor=0.3,compactness=0,it_opening=2,it_bg=3):
     """
         Dataloader need to be a batch of 1 image of the 1000x1000 images MoNuSeg
     """
@@ -335,8 +335,8 @@ def compute_AJI(model,dataloader_test,device,clean_prediction=False,threshold=54
             except:
                 mask_pred = mask_pred
 
-        labels_pred = watershed_prediction(mask_pred,clean_prediction=clean_prediction,threshold=threshold,\
-            dist_factor=dist_factor)
+        labels_pred = watershed_prediction(mask_pred,clean_pred=clean_prediction,threshold=threshold,\
+            dist_factor=dist_factor,compactness=compactness,it_opening=it_opening,it_bg=it_bg)
 
         aji_metric.add_prediction(labels_pred,mask)
 

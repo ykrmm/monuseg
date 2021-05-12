@@ -187,7 +187,7 @@ def eval_accuracy_equiv(model,val_loader,criterion=nn.KLDivLoss(reduction='batch
 ###########################################################################################################################|
 
 
-def watershed_prediction(pred:torch.Tensor,clean_prediction=False,threshold=54,dist_factor=0.3):
+def watershed_prediction(pred:torch.Tensor,clean_pred=False,threshold=54,dist_factor=0.3,compactness=0,it_opening=2,it_bg=3):
     """
         Clean prediction -> float If true it'll remove of the prediction the nuclei that occure less than threshold
         threshold -> int: Threshold for cleaning predictions
@@ -198,10 +198,10 @@ def watershed_prediction(pred:torch.Tensor,clean_prediction=False,threshold=54,d
     # noise removal 
     pred_np =  np.uint8(pred_np)
     kernel = np.ones((3,3),np.uint8)
-    opening = cv2.morphologyEx(pred_np,cv2.MORPH_OPEN,kernel, iterations = 2)
+    opening = cv2.morphologyEx(pred_np,cv2.MORPH_OPEN,kernel, iterations = it_opening)
 
     # sure background area
-    sure_bg = cv2.dilate(pred_np,kernel,iterations=3)
+    sure_bg = cv2.dilate(pred_np,kernel,iterations=it_bg)
 
     # Finding sure foreground area
     dist_transform = cv2.distanceTransform(opening,cv2.DIST_L2,5)
@@ -212,10 +212,10 @@ def watershed_prediction(pred:torch.Tensor,clean_prediction=False,threshold=54,d
     unknown = cv2.subtract(sure_bg,sure_fg)
     # Marker labelling
     ret, markers = cv2.connectedComponents(sure_fg)
-    labels_pred = watershed(-dist_transform, markers, mask=pred_np,compactness=10)
+    labels_pred = watershed(-dist_transform, markers, mask=pred_np,compactness=compactness)
     # Add one to all labels so that sure background is not 0, but 1
 
-    if clean_prediction:
+    if clean_pred:
         labels_pred = clean_prediction(labels_pred,threshold)
 
     return labels_pred

@@ -118,18 +118,16 @@ def main():
     if args.rotate:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
-        RandomRotate(angle_max=args.angle_max,p_rotate=0.25,expand=True),
+        RandomRotate(angle_max=args.angle_max,p_rotate=0.25,expand=False),
         RandomCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
-        ColorJitter(brightness=jitter,contrast=jitter,saturation=jitter,hue=0),
         ]
         )
     else:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
         RandomCrop(size_crop),
-        RandomHorizontalFlip(flip_prob=0.5),
-        ColorJitter(brightness=jitter,contrast=jitter,saturation=jitter,hue=0)
+        RandomHorizontalFlip(flip_prob=0.5)
         ])
         
 
@@ -138,11 +136,11 @@ def main():
     # dataset and dataloader
     # ------------
 
-    train_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='train',transforms=transforms_train,target_size=args.target_size,stride=args.stride)
+    train_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='train',transforms=transforms_train,target_size=args.target_size,stride=args.stride,binary=True)
     if args.entire_image:
         test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',load_entire_image=True)
     else:
-        test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',target_size=args.target_size,stride=args.stride)
+        test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',target_size=args.target_size,stride=args.stride,binary=True)
 
     
 

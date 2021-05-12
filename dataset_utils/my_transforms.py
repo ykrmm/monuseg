@@ -8,7 +8,9 @@ from torchvision.transforms import functional as F
 
 
 def pad_if_smaller(image, size, fill=0):
+    print(image.size)
     min_size = min(image.size)
+    
     if min_size < size:
         ow, oh = image.size
         padh = size - oh if oh < size else 0
@@ -56,12 +58,16 @@ class RandomRotate(object):
         if random.random() > self.p_rotate:
             if random.random() > 0.5:
                 angle = np.random.randint(0,self.angle)
+                mask = torch.unsqueeze(mask,0)
                 image = F.rotate(image,angle=angle,expand=self.expand)
                 mask = F.rotate(mask,angle=angle,expand=self.expand)
+                mask = mask.squeeze()
             else:
                 angle = np.random.randint(360-self.angle,360)
+                mask = torch.unsqueeze(mask,0)
                 image = F.rotate(image,angle=angle,expand=self.expand)
                 mask = F.rotate(mask,angle=angle,expand=self.expand)
+                mask = mask.squeeze()
         return image,mask
 
 class RandomPiRotate(object):
@@ -91,8 +97,8 @@ class RandomCrop(object):
         self.size = size
 
     def __call__(self, image, target):
-        image = pad_if_smaller(image, self.size)
-        target = pad_if_smaller(target, self.size, fill=255)
+        #image = pad_if_smaller(image, self.size)
+        #target = pad_if_smaller(target, self.size, fill=255)
         crop_params = T.RandomCrop.get_params(image, (self.size, self.size))
         image = F.crop(image, *crop_params)
         target = F.crop(target, *crop_params)
