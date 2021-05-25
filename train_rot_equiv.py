@@ -56,7 +56,7 @@ def main():
     parser.add_argument('--size_img', default=100, type=int,help="Size of input images")
     parser.add_argument('--size_crop', default=80, type=int,help="Size of crop image during training")
     parser.add_argument('--angle_max', default=360, type=int,help="Max angle for the random rotations")
-
+    parser.add_argument('--pi_rotate', default=False, type=str2bool,help="Use only pi/2 multiple rotation for rotation equivariance training")
     # Dataloader and gpu
     parser.add_argument('--nw', default=0, type=int,help="Num workers for the data loader")
     parser.add_argument('--pm', default=True, type=str2bool,help="Pin memory for the dataloader")
@@ -189,7 +189,7 @@ def main():
 
     train_rot_equiv(model,args.n_epochs,dataloader_train_sup,train_dataset_unsup,dataloader_val,criterion_supervised,optimizer,\
         scheduler=args.scheduler,Loss=args.Loss,gamma=args.gamma,batch_size=args.batch_size,save_folder=save_dir,\
-            model_name=args.model_name,benchmark=args.benchmark,angle_max=args.angle_max,\
+            model_name=args.model_name,benchmark=args.benchmark,angle_max=args.angle_max,pi_rotate=args.pi_rotate,AJI=True,\
         eval_every=args.eval_every,save_all_ep=args.save_all_ep,save_best=args.save_best\
             ,rot_cpu=args.rot_cpu,device=device,num_classes=N_CLASSES)
 

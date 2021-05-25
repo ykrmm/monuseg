@@ -95,7 +95,7 @@ def eval_model(model,val_loader,device='cpu',num_classes=4):
     
     return state
 def train_fully_supervised(model,n_epochs,train_loader,val_loader,criterion,optimizer,scheduler,\
-        save_folder,model_name,benchmark=False,save_all_ep=True, save_best=False, device='cpu',num_classes=21):
+        save_folder,model_name,benchmark=False,save_all_ep=True,AJI=False, save_best=False, device='cpu',num_classes=21):
     """
         A complete training of fully supervised model. 
         save_folder : Path to save the model, the courb of losses,metric...
@@ -112,6 +112,7 @@ def train_fully_supervised(model,n_epochs,train_loader,val_loader,criterion,opti
     loss_train = []
     iou_train = []
     iou_test = []
+    aji_test = []
     dc_train = []
     dc_test = []
     f1_train = []
@@ -154,7 +155,16 @@ def train_fully_supervised(model,n_epochs,train_loader,val_loader,criterion,opti
             loss_test.append(loss)
             iou_test.append(iou)
             accuracy_test.append(acc)
-            print('TEST - EP:',ep,'iou:',iou,'Accuracy:',acc,'Loss CE',loss,'Dice Coeff',dice_coeff,'F1 Score',F1,'Precision',precision,'Recall',recall)
+            if AJI:
+                aji,aji_mean = compute_AJI(model,val_loader,device,dist_factor=0.3,threshold=54,clean_prediction=False,it_bg=0,it_opening=0)
+                print('TEST - EP:',ep,'AJI:',aji_mean,'iou:',iou,'Accuracy:',acc,'Loss CE',loss)
+                aji_test.append(aji_mean)
+                save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=aji_mean,iou_test=aji_test) 
+
+            else:
+                print('TEST - EP:',ep,'iou:',iou,'Accuracy:',acc,'Loss CE',loss)
+                # SAVING MODEL
+                save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=iou,iou_test=iou_test) # A changer 
         
         ## Save model
         save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=iou,iou_test=iou_test) # Save b
@@ -170,7 +180,7 @@ def train_fully_supervised(model,n_epochs,train_loader,val_loader,criterion,opti
 ###########################################################################################################################|
 
 def train_step_rot_equiv(model,train_loader_sup,train_loader_equiv,criterion_supervised,criterion_unsupervised,\
-                        optimizer,gamma,Loss,device,num_classes=21,angle_max=30,rot_cpu=False):
+                        optimizer,gamma,Loss,device,num_classes=21,angle_max=30,rot_cpu=False,pi_rotate=False):
     """
         A training epoch for rotational equivariance using for semantic segmentation
     """
@@ -181,11 +191,13 @@ def train_step_rot_equiv(model,train_loader_sup,train_loader_equiv,criterion_sup
     model.train()
     optimizer.zero_grad()
     for i,(batch_sup,batch_unsup) in enumerate(zip(train_loader_sup,train_loader_equiv)):
-        
-        if random.random() > 0.5: # I use this to rotate the image on the left and on the right during training.
-            angle = np.random.randint(0,angle_max)
+        if pi_rotate:
+            angle = int(np.random.choice([90,180,270],1,replace=True)) #Only pi/2 rotation
         else:
-            angle = np.random.randint(360-angle_max,360)
+            if random.random() > 0.5: # I use this to rotate the image on the left and on the right during training.
+                angle = np.random.randint(0,angle_max)
+            else:
+                angle = np.random.randint(360-angle_max,360)
         x_unsup,_ = batch_unsup
         loss_equiv,acc = compute_transformations_batch(x_unsup,model,angle,reshape=False,\
                                                      criterion=criterion_unsupervised,Loss = Loss,\
@@ -220,7 +232,7 @@ def train_step_rot_equiv(model,train_loader_sup,train_loader_equiv,criterion_sup
     return d
 
 def train_rot_equiv(model,n_epochs,train_loader_sup,train_dataset_unsup,val_loader,criterion_supervised,optimizer,scheduler,\
-        Loss,gamma,batch_size,save_folder,model_name,benchmark=False,angle_max=30,
+        Loss,gamma,batch_size,save_folder,model_name,benchmark=False,angle_max=360,pi_rotate=False,AJI=False,
         eval_every=5,save_all_ep=True,rot_cpu=False,save_best=False, device='cpu',num_classes=21):
     """
         A complete training of rotation equivariance supervised model. 
@@ -242,6 +254,7 @@ def train_rot_equiv(model,n_epochs,train_loader_sup,train_dataset_unsup,val_load
     criterion_unsupervised = get_criterion(Loss)
     iou_train = []
     iou_test = []
+    aji_test = []
     dc_train = []
     dc_test = []
     f1_train = []
@@ -262,7 +275,7 @@ def train_rot_equiv(model,n_epochs,train_loader_sup,train_dataset_unsup,val_load
         print("EPOCH",ep)
         # TRAINING
         d = train_step_rot_equiv(model,train_loader_sup,train_loader_equiv,criterion_supervised,criterion_unsupervised,\
-                        optimizer,gamma,Loss,device,angle_max=angle_max,num_classes=num_classes,rot_cpu=rot_cpu)
+                        optimizer,gamma,Loss,device,angle_max=angle_max,pi_rotate=pi_rotate,num_classes=num_classes,rot_cpu=rot_cpu)
         if scheduler:
             lr_scheduler.step()
         combine_loss_train.append(d['loss'])
@@ -277,7 +290,7 @@ def train_rot_equiv(model,n_epochs,train_loader_sup,train_dataset_unsup,val_load
             'Loss equiv:',d['loss_equiv'],'Combine Loss:',d['loss'],'Equivariance Accuracy:',d['equiv_acc'],)
         # EVALUATION 
         model.eval()
-        with torch.no_grad():
+        with torch.no_grad():   
             state = eval_model(model,val_loader,device=device,num_classes=num_classes)
             iou = state.metrics['mean IoU']
             acc = state.metrics['accuracy']
@@ -291,22 +304,30 @@ def train_rot_equiv(model,n_epochs,train_loader_sup,train_dataset_unsup,val_load
             loss_test_sup.append(loss)
             iou_test.append(iou)
             accuracy_test.append(acc)
-            print('TEST - EP:',ep,'iou:',iou,'Accuracy:',acc,'Loss CE',loss)
-            # SAVING MODEL
-            save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=iou,iou_test=iou_test) # A changer 
+            if AJI:
+                aji,aji_mean = compute_AJI(model,val_loader,device,dist_factor=0.3,threshold=54,clean_prediction=False,it_bg=0,it_opening=0)
+                print('TEST - EP:',ep,'AJI:',aji_mean,'iou:',iou,'Accuracy:',acc,'Loss CE',loss)
+                aji_test.append(aji_mean)
+                save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=aji_mean,iou_test=aji_test) 
+
+            else:
+                print('TEST - EP:',ep,'iou:',iou,'Accuracy:',acc,'Loss CE',loss)
+                # SAVING MODEL
+                save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=iou,iou_test=iou_test) # A changer 
             
             
-            if ep%eval_every==0: # Eval loss equiv and equivariance accuracy for the validation dataset
+            """if ep%eval_every==0: # Eval loss equiv and equivariance accuracy for the validation dataset
                 equiv_acc, m_loss_equiv = eval_accuracy_equiv(model,val_loader,criterion=criterion_unsupervised,\
                                 nclass=21,device=device,Loss=Loss,plot=False,angle_max=angle_max,random_angle=False)
                 loss_test_unsup.append(m_loss_equiv)
                 equiv_accuracy_test.append(equiv_acc)  
-                """  
+                
                 print('VOC Dataset Train')
                 _ = eval_model_all_angle(model,size_img,dataroot_voc,train=True,device=device,num_classes=num_classes)
                 print('VOC Dataset Val')
                 _ = eval_model_all_angle(model,size_img,dataroot_voc,train=False,device=device,num_classes=num_classes)
-                ## Save model"""
+                ## Save model
+                """
                 
 
     save_curves(path=save_folder,combine_loss_train=combine_loss_train,loss_train_sup=loss_train_sup,\

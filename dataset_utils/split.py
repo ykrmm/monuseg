@@ -5,8 +5,8 @@ import os
 from os.path import join
 import cv2
 
-train = True
-TARGET_SIZE = 120 # Size of the generated patch
+train = False
+TARGET_SIZE = 256 # Size of the generated patch
 STRIDE = TARGET_SIZE//2
 ROOT = '/share/DEEPLEARNING/datasets/monuseg/'
 TRAIN_IMG = join(ROOT,'MoNuSegTrainingData')
