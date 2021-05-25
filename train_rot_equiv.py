@@ -137,6 +137,7 @@ def main():
     train_dataset_unsup = MoNuSegDataset(args.dataroot_monuseg,image_set='train',transforms=transforms_train,target_size=args.target_size,stride=args.stride)
     if args.entire_image:
         test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',load_entire_image=True)
+        test_dataset_aji = MoNuSegDataset(args.dataroot_monuseg,image_set='test',load_entire_image=True,binary=False)
     else:
         test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',target_size=args.target_size,stride=args.stride)
 
@@ -154,17 +155,18 @@ def main():
     # Print len datasets
     print("There is",len(train_dataset_unsup),"images for equivariance training,",len(train_dataset_sup),"for supervised training and",\
         len(test_dataset),"for validation")
-    dataloader_train_equiv = torch.utils.data.DataLoader(train_dataset_unsup, batch_size=args.batch_size,num_workers=args.nw,\
-        pin_memory=args.pm,shuffle=True,drop_last=True)
     dataloader_train_sup = torch.utils.data.DataLoader(train_dataset_sup, batch_size=args.batch_size,num_workers=args.nw,\
         pin_memory=args.pm,shuffle=True,drop_last=True)
 
     if args.entire_image:
         dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=args.nw,pin_memory=args.pm,\
             batch_size=1) # Batch size set to 1 if we evaluate on the entire image (1000 x 1000 size)
+        dataloader_val_aji = torch.utils.data.DataLoader(test_dataset_aji,num_workers=args.nw,pin_memory=args.pm,\
+            batch_size=args.batch_size)
     else:
         dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=args.nw,pin_memory=args.pm,\
             batch_size=args.batch_size)
+        
     # Decide which device we want to run on
     
 
@@ -190,7 +192,7 @@ def main():
     train_rot_equiv(model,args.n_epochs,dataloader_train_sup,train_dataset_unsup,dataloader_val,criterion_supervised,optimizer,\
         scheduler=args.scheduler,Loss=args.Loss,gamma=args.gamma,batch_size=args.batch_size,save_folder=save_dir,\
             model_name=args.model_name,benchmark=args.benchmark,angle_max=args.angle_max,pi_rotate=args.pi_rotate,AJI=True,\
-        eval_every=args.eval_every,save_all_ep=args.save_all_ep,save_best=args.save_best\
+                aji_loader=dataloader_val_aji,eval_every=args.eval_every,save_all_ep=args.save_all_ep,save_best=args.save_best\
             ,rot_cpu=args.rot_cpu,device=device,num_classes=N_CLASSES)
 
 

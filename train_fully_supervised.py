@@ -107,14 +107,14 @@ def main():
     size_img = args.size_img
     size_crop = args.size_crop
     if args.scale:
-        resize = 1.2
+        resize = 1.3
         size_max=size_img*resize
         
     else:
         resize = 1
         size_max=size_max=size_img*resize
 
-    jitter = 0.5
+    jitter = 10
     if args.rotate:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
@@ -122,13 +122,15 @@ def main():
         RandomPiRotate(p_rotate=0.25),
         RandomCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
+        #ColorJitter(brightness=jitter,contrast=jitter,saturation=jitter)
         ]
         )
     else:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
         RandomCrop(size_crop),
-        RandomHorizontalFlip(flip_prob=0.5)
+        RandomHorizontalFlip(flip_prob=0.5),
+        #ColorJitter(brightness=10,contrast=10,saturation=10)
         ])
         
 
@@ -137,9 +139,11 @@ def main():
     # dataset and dataloader
     # ------------
 
-    train_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='train',transforms=transforms_train,target_size=args.target_size,stride=args.stride,binary=True)
+    train_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='train',transforms=transforms_train,target_size=args.target_size,\
+        stride=args.stride,binary=True,normalize=False)
     if args.entire_image:
-        test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',load_entire_image=True)
+        test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',load_entire_image=True,binary=True)
+        test_dataset_aji = MoNuSegDataset(args.dataroot_monuseg,image_set='test',load_entire_image=True,binary=False)
     else:
         test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',target_size=args.target_size,stride=args.stride,binary=True)
 
@@ -156,9 +160,13 @@ def main():
     if args.entire_image:
         dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=args.nw,pin_memory=args.pm,\
             batch_size=1) # Batch size set to 1 if we evaluate on the entire image (1000 x 1000 size)
+        dataloader_val_aji = torch.utils.data.DataLoader(test_dataset_aji,num_workers=args.nw,pin_memory=args.pm,\
+            batch_size=args.batch_size)
     else:
         dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=args.nw,pin_memory=args.pm,\
             batch_size=args.batch_size)
+
+        
     # Decide which device we want to run on
     
 
@@ -180,9 +188,9 @@ def main():
     print('N_CLASSES',N_CLASSES)
     criterion = nn.CrossEntropyLoss(ignore_index=N_CLASSES) # On ignore la classe border.
     optimizer = torch.optim.SGD(model.parameters(),lr=args.learning_rate,momentum=args.moment,weight_decay=args.wd)
-    train_fully_supervised(model=model,n_epochs=args.n_epochs,train_loader=dataloader_train,val_loader=dataloader_val,\
+    train_fully_supervised(model=model,n_epochs=args.n_epochs,train_loader=dataloader_train,val_loader=dataloader_val,aji_loader=dataloader_val_aji,\
         criterion=criterion,optimizer=optimizer,save_folder=save_dir,scheduler=args.scheduler,model_name=args.model_name,\
-            benchmark=args.benchmark,AJI=False, save_best=args.save_best,save_all_ep=args.save_all_ep,device=device,num_classes=N_CLASSES)
+            benchmark=args.benchmark,AJI=True, save_best=args.save_best,save_all_ep=args.save_all_ep,device=device,num_classes=N_CLASSES)
 
 
     

@@ -155,3 +155,24 @@ class ColorJitter(object):
         if self.hue is not None:
             image = F.adjust_hue(image, self.hue)
         return image, target
+
+
+class RandomAffine(object):
+    def __init__(self,p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0)) -> None:
+        self.angle = angle
+        self.translate = translate
+        self.scale = scale 
+        self.shear = shear
+        self.affine_prob = p
+
+    def __call__(self,image,mask):
+        if random.random() < self.p:
+            angle = np.random.randint(self.angle-10,self.angle+10)
+            image = F.affine(image, angle = angle, translate=self.translate, scale = self.scale, share = self.share)
+            mask = torch.unsqueeze(mask,0)
+            mask = F.affine(mask, angle = angle, translate=self.translate, scale = self.scale, share = self.share)
+            mask.squeeze()
+        return image,mask
+    
+
+#functional.affine

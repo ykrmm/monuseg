@@ -95,7 +95,8 @@ def eval_model(model,val_loader,device='cpu',num_classes=4):
     
     return state
 def train_fully_supervised(model,n_epochs,train_loader,val_loader,criterion,optimizer,scheduler,\
-        save_folder,model_name,benchmark=False,save_all_ep=True,AJI=False, save_best=False, device='cpu',num_classes=21):
+        save_folder,model_name,benchmark=False,save_all_ep=True,AJI=False,aji_loader=None,\
+             save_best=False, device='cpu',num_classes=21):
     """
         A complete training of fully supervised model. 
         save_folder : Path to save the model, the courb of losses,metric...
@@ -156,7 +157,7 @@ def train_fully_supervised(model,n_epochs,train_loader,val_loader,criterion,opti
             iou_test.append(iou)
             accuracy_test.append(acc)
             if AJI:
-                aji,aji_mean = compute_AJI(model,val_loader,device,dist_factor=0.3,threshold=54,clean_prediction=False,it_bg=0,it_opening=0)
+                aji,aji_mean = compute_AJI(model,aji_loader,device,dist_factor=0.3,threshold=54,clean_prediction=False,it_bg=0,it_opening=0)
                 print('TEST - EP:',ep,'AJI:',aji_mean,'iou:',iou,'Accuracy:',acc,'Loss CE',loss)
                 aji_test.append(aji_mean)
                 save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=aji_mean,iou_test=aji_test) 
@@ -230,7 +231,7 @@ def train_step_rot_equiv(model,train_loader_sup,train_loader_equiv,criterion_sup
     return d
 
 def train_rot_equiv(model,n_epochs,train_loader_sup,train_dataset_unsup,val_loader,criterion_supervised,optimizer,scheduler,\
-        Loss,gamma,batch_size,save_folder,model_name,benchmark=False,angle_max=360,pi_rotate=False,AJI=False,
+        Loss,gamma,batch_size,save_folder,model_name,benchmark=False,angle_max=360,pi_rotate=False,AJI=False,aji_loader=None,
         eval_every=5,save_all_ep=True,rot_cpu=False,save_best=False, device='cpu',num_classes=21):
     """
         A complete training of rotation equivariance supervised model. 
@@ -303,7 +304,7 @@ def train_rot_equiv(model,n_epochs,train_loader_sup,train_dataset_unsup,val_load
             iou_test.append(iou)
             accuracy_test.append(acc)
             if AJI:
-                aji,aji_mean = compute_AJI(model,val_loader,device,dist_factor=0.3,threshold=54,clean_prediction=False,it_bg=0,it_opening=0)
+                aji,aji_mean = compute_AJI(model,aji_loader,device,dist_factor=0.3,threshold=54,clean_prediction=False,it_bg=0,it_opening=0)
                 print('TEST - EP:',ep,'AJI:',aji_mean,'iou:',iou,'Accuracy:',acc,'Loss CE',loss)
                 aji_test.append(aji_mean)
                 save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=aji_mean,iou_test=aji_test) 
