@@ -166,8 +166,6 @@ def train_fully_supervised(model,n_epochs,train_loader,val_loader,criterion,opti
                 # SAVING MODEL
                 save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=iou,iou_test=iou_test) # A changer 
         
-        ## Save model
-        save_model(model,save_all_ep,save_best,save_folder,model_name,ep=ep,iou=iou,iou_test=iou_test) # Save b
 
     save_curves(path=save_folder,loss_train=loss_train,iou_train=iou_train,accuracy_train=accuracy_train\
                                 ,loss_test=loss_test,iou_test=iou_test,accuracy_test=accuracy_test)
