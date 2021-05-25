@@ -162,7 +162,7 @@ def main():
         dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=args.nw,pin_memory=args.pm,\
             batch_size=1) # Batch size set to 1 if we evaluate on the entire image (1000 x 1000 size)
         dataloader_val_aji = torch.utils.data.DataLoader(test_dataset_aji,num_workers=args.nw,pin_memory=args.pm,\
-            batch_size=args.batch_size)
+            batch_size=1)
     else:
         dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=args.nw,pin_memory=args.pm,\
             batch_size=args.batch_size)

@@ -161,7 +161,7 @@ def main():
         dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=args.nw,pin_memory=args.pm,\
             batch_size=1) # Batch size set to 1 if we evaluate on the entire image (1000 x 1000 size)
         dataloader_val_aji = torch.utils.data.DataLoader(test_dataset_aji,num_workers=args.nw,pin_memory=args.pm,\
-            batch_size=args.batch_size)
+            batch_size=1)
     else:
         dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=args.nw,pin_memory=args.pm,\
             batch_size=args.batch_size)
@@ -190,7 +190,7 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(),lr=args.learning_rate,momentum=args.moment,weight_decay=args.wd)
     train_fully_supervised(model=model,n_epochs=args.n_epochs,train_loader=dataloader_train,val_loader=dataloader_val,aji_loader=dataloader_val_aji,\
         criterion=criterion,optimizer=optimizer,save_folder=save_dir,scheduler=args.scheduler,model_name=args.model_name,\
-            benchmark=args.benchmark,AJI=True, save_best=args.save_best,save_all_ep=args.save_all_ep,device=device,num_classes=N_CLASSES)
+            benchmark=args.benchmark,AJI=False, save_best=args.save_best,save_all_ep=args.save_all_ep,device=device,num_classes=N_CLASSES)
 
 
     
