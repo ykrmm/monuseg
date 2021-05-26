@@ -1,0 +1,46 @@
+training:    
+    auto_lr: false
+    learning_rate: 0.1
+    scheduler: True
+    wd : 0.0002
+    moment: 0.8 
+    batch_size: 20 
+    n_epochs: 40
+    benchmark: True
+    num_classes: 2 
+
+    
+model_config:
+  model: 'FCN'
+  pretrained: False
+  eval_angle: False
+  aji: False # Aji metric Evaluation during training
+
+
+data_augmentation: 
+  rotate: False
+  scale: False
+  size_img: 256
+  size_crop: 220
+  angle_max: 360 # Max angle for the random rotations
+
+loader_gpu:
+  nw: 4 # Num workers
+  pm: True # Pin memory
+  gpu: 1 # Device to use 
+
+
+dataset: 
+  split: False
+  split_ratio: 0.3 # Percentage of supervised data 
+  dataroot_monuseg: '/share/DEEPLEARNING/datasets/monuseg'
+  entire_image: True # Eval on the complete image 1000x1000 size
+  target_size: '256' # arget size used for spliting images
+  stride: '128' #Stride used for spliting images
+
+
+save_config: 
+  model_name: 'fully_supervised_monuseg'
+  save_dir: '/share/homes/karmimy/equiv/save_model/fully_supervised_monuseg'
+  save_all_ep: False
+  save_best: True # If true will only save the best epoch model

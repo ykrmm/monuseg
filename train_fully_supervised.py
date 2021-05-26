@@ -10,6 +10,7 @@ import torch.utils.data as tud
 import argparse
 from eval_train import create_save_directory,save_hparams
 from model import CNN3
+import yaml
 # CONSTANTS
 
 
@@ -31,82 +32,92 @@ def main():
     # args
     # ------------
     parser = ArgumentParser()
-    # Training parameters
-    parser.add_argument('--auto_lr', type=str2bool, default=False,help="Auto lr finder")
-    parser.add_argument('--learning_rate', type=float, default=10e-4)
-    parser.add_argument('--scheduler', type=str2bool, default=True)
-    parser.add_argument('--wd', type=float, default=2e-4)
-    parser.add_argument('--moment', type=float, default=0.9)
-    parser.add_argument('--batch_size', default=5, type=int)
-    parser.add_argument('--n_epochs', default=10, type=int)
-    parser.add_argument('--benchmark', default=True, type=str2bool, help="enable or disable backends.cudnn")
-    parser.add_argument('--num_classes', default=3, type=int,help="How many classes for the model")
-    parser.add_argument('--trainable_backbone', default=3, type=int,help="number of trainable (not frozen) resnet layers starting \
-        from final block. Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.")
+    
     # Model and eval
-    parser.add_argument('--model', default='FCN', type=str,help="FCN or DLV3 model")
-    parser.add_argument('--pretrained', default=False, type=str2bool,help="Use pretrained pytorch model")
-    parser.add_argument('--eval_angle', default=False, type=str2bool,help=\
-        "If true, it'll eval the model with different angle input size")
+    parser.add_argument('--config', default='fully_sup_config.yaml', type=str,help="Yaml configuration files")
+    args = parser.parse_args()
 
-    # Data augmentation 
-    parser.add_argument('--rotate', default=False, type=str2bool,help="Use random rotation as data augmentation")
-    parser.add_argument('--scale', default=True, type=str2bool,help="Use scale as data augmentation")
-    parser.add_argument('--size_img', default=100, type=int,help="Size of input images")
-    parser.add_argument('--size_crop', default=80, type=int,help="Size of crop image during training")
-    parser.add_argument('--angle_max', default=360, type=int,help="Max angle for the random rotations")
+
+    #------------
+    # YAML
+    #------------
+
+
+    with open(args.config) as f:
+        
+        arguments = yaml.load(f, Loader=yaml.FullLoader)
+        
+    # Training args 
+    auto_lr = arguments['training']['auto_lr']
+    learning_rate = arguments['training']['learning_rate']
+    scheduler = arguments['training']['scheduler']
+    wd = arguments['training']['wd']
+    moment = arguments['training']['moment']
+    batch_size = arguments['training']['batch_size']
+    benchmark = arguments['training']['benchmark']
+    num_classes = arguments['training']['num_classes']
+    n_epochs = arguments['training']['n_epochs']
+
+    # Model args 
+    model_n = arguments['model_config']['model']
+    eval_angle = arguments['model_config']['eval_angle']
+    pretrained = arguments['model_config']['pretrained']
+    aji = arguments['model_config']['aji']
+    # Data augmentation
+    rotate = arguments['data_augmentation']['rotate']
+    scale = arguments['data_augmentation']['scale']
+    size_img = arguments['data_augmentation']['size_img']
+    size_crop = arguments['data_augmentation']['size_crop']
+    angle_max = arguments['data_augmentation']['angle_max']
 
     # Dataloader and gpu
-    parser.add_argument('--nw', default=4, type=int,help="Num workers for the data loader")
-    parser.add_argument('--pm', default=True, type=str2bool,help="Pin memory for the dataloader")
-    parser.add_argument('--gpu', default=0, type=int,help="Wich gpu to select for training")
-    
-    # Dataset 
-    parser.add_argument('--split', default=False, type=str2bool, help="Split the dataset")
-    parser.add_argument('--split_ratio', default=0.3, type=float, help="Amount of data we used for training")
-    parser.add_argument('--dataroot_monuseg', default='/share/DEEPLEARNING/datasets/monuseg', type=str)
-    parser.add_argument('--entire_image', default=False, type=str2bool,help="Eval on the complete image 1000x1000 size")
-    parser.add_argument('--target_size',default=None,type=str,help='Target size used for spliting images.')
-    parser.add_argument('--stride',default=None,type=str,help='Stride used for spliting images.')
-    # Save parameters
-    parser.add_argument('--model_name', type=str,default="fully_supervised_monuseg",help="what name to use for saving")
-    parser.add_argument('--save_dir', default='/share/homes/karmimy/equiv/save_model/fully_supervised_monuseg', type=str)
-    parser.add_argument('--save_all_ep', default=False, type=str2bool,help=\
-        "If true it'll save the model every epoch in save_dir")
-    parser.add_argument('--save_best', default=True, type=str2bool,help="If true will only save the best epoch model")
-    args = parser.parse_args()
+    nw =  arguments['loader_gpu']['nw']
+    pm =  arguments['loader_gpu']['pm']
+    gpu =  arguments['loader_gpu']['gpu']
+
+    # Datasets 
+    split = arguments['dataset']['split']
+    split_ratio = arguments['dataset']['split_ratio']
+    dataroot_monuseg = arguments['dataset']['dataroot_monuseg']
+    entire_image = arguments['dataset']['entire_image']
+    target_size = arguments['dataset']['target_size']
+    stride = arguments['dataset']['stride']
+
+    # Save config 
+    model_name = arguments['save_config']['model_name']
+    save_dir = arguments['save_config']['save_dir']
+    save_all_ep = arguments['save_config']['save_all_ep']
+    save_best = arguments['save_config']['save_best']
+
+
     # ------------
     # device
     # ------------
-    device = torch.device("cuda:"+str(args.gpu) if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:"+str(gpu) if torch.cuda.is_available() else "cpu")
     print("device used:",device)
     # ------------
     # model
     # ------------
 
-    N_CLASSES = args.num_classes
+    N_CLASSES = num_classes
     
-    if args.model.upper()=='FCN':
-        model = models.segmentation.fcn_resnet101(pretrained=args.pretrained,num_classes=N_CLASSES)
-    elif args.model.upper()=='DLV3':
-        model = models.segmentation.deeplabv3_resnet101(pretrained=args.pretrained,num_classes=N_CLASSES)
-    elif args.model.upper()=='CNN3':
+    if model_n.upper()=='FCN':
+        model = models.segmentation.fcn_resnet101(pretrained=pretrained,num_classes=N_CLASSES)
+    elif model_n.upper()=='DLV3':
+        model = models.segmentation.deeplabv3_resnet101(pretrained=pretrained,num_classes=N_CLASSES)
+    elif model_n.upper()=='CNN3':
         print('CAREFUL! If you use the model CNN3, the input size MUST BE 51.')
         model = CNN3()
-    elif args.model.upper()=='MASKRCNN':
-        model = models.detection.maskrcnn_resnet50_fpn(pretrained=args.pretrained,retrained=False, progress=True,\
-             num_classes=N_CLASSES, pretrained_backbone=True, trainable_backbone_layers=args.trainable_backbone)
     else:
         raise Exception('model must be "FCN" , "CNN3" or "DLV3"')
     model.to(device)
     # ------------
     # data augmentation
     # ------------
-    if args.size_img < args.size_crop:
+    if size_img < size_crop:
         raise Exception('Cannot have size of input images less than size of crop')
-    size_img = args.size_img
-    size_crop = args.size_crop
-    if args.scale:
+
+    if scale:
         min_size = 0.7
         resize = 1.3
         size_max=int(size_img*resize)
@@ -118,10 +129,10 @@ def main():
         size_max=size_max=size_img*resize
 
     jitter = 10
-    if args.rotate:
+    if rotate:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
-        #RandomRotate(angle_max=args.angle_max,p_rotate=0.25,expand=True),
+        #RandomRotate(angle_max=angle_max,p_rotate=0.25,expand=True),
         RandomPiRotate(p_rotate=0.25),
         RandomCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
@@ -143,32 +154,32 @@ def main():
     # dataset and dataloader
     # ------------
 
-    train_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='train',transforms=transforms_train,target_size=args.target_size,\
-        stride=args.stride,binary=True,normalize=True)
-    if args.entire_image:
-        test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',load_entire_image=True,binary=True)
-        test_dataset_aji = MoNuSegDataset(args.dataroot_monuseg,image_set='test',load_entire_image=True,binary=False)
+    train_dataset = MoNuSegDataset(dataroot_monuseg,image_set='train',transforms=transforms_train,target_size=target_size,\
+        stride=stride,binary=True,normalize=True)
+    if entire_image:
+        test_dataset = MoNuSegDataset(dataroot_monuseg,image_set='test',load_entire_image=True,binary=True)
+        test_dataset_aji = MoNuSegDataset(dataroot_monuseg,image_set='test',load_entire_image=True,binary=False)
     else:
-        test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',target_size=args.target_size,stride=args.stride,binary=True)
+        test_dataset = MoNuSegDataset(dataroot_monuseg,image_set='test',target_size=target_size,stride=stride,binary=True)
 
     
 
-    split = args.split
+    split = split
     if split==True:
-        train_dataset = split_dataset(train_dataset,args.split_ratio)
+        train_dataset = split_dataset(train_dataset,split_ratio)
     # Print len datasets
     print("There is",len(train_dataset),"images for training and",len(test_dataset),"for validation")
-    dataloader_train = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size,num_workers=args.nw,\
-        pin_memory=args.pm,shuffle=True,drop_last=True)
+    dataloader_train = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,num_workers=nw,\
+        pin_memory=pm,shuffle=True,drop_last=True)
 
-    if args.entire_image:
-        dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=args.nw,pin_memory=args.pm,\
+    if entire_image:
+        dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=nw,pin_memory=pm,\
             batch_size=1) # Batch size set to 1 if we evaluate on the entire image (1000 x 1000 size)
-        dataloader_val_aji = torch.utils.data.DataLoader(test_dataset_aji,num_workers=args.nw,pin_memory=args.pm,\
+        dataloader_val_aji = torch.utils.data.DataLoader(test_dataset_aji,num_workers=nw,pin_memory=pm,\
             batch_size=1)
     else:
-        dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=args.nw,pin_memory=args.pm,\
-            batch_size=args.batch_size)
+        dataloader_val = torch.utils.data.DataLoader(test_dataset,num_workers=nw,pin_memory=pm,\
+            batch_size=batch_size)
 
         
     # Decide which device we want to run on
@@ -176,25 +187,26 @@ def main():
 
     
     # Auto lr finding
-    #if args.auto_lr==True:
+    #if auto_lr==True:
     # ------------
     # save
     # ------------
-    save_dir = create_save_directory(args.save_dir)
+    save_dir = create_save_directory(save_dir)
     print('model will be saved in',save_dir)
     save_hparams(args,save_dir)
     print('PARAMETERS : ')
-    print(args)
+    print(arguments)
     print('-------------------------------------------------------------------')
     # ------------
     # training
     # ------------
     print('N_CLASSES',N_CLASSES)
     criterion = nn.CrossEntropyLoss(ignore_index=N_CLASSES) # On ignore la classe border.
-    optimizer = torch.optim.SGD(model.parameters(),lr=args.learning_rate,momentum=args.moment,weight_decay=args.wd)
-    train_fully_supervised(model=model,n_epochs=args.n_epochs,train_loader=dataloader_train,val_loader=dataloader_val,aji_loader=dataloader_val_aji,\
-        criterion=criterion,optimizer=optimizer,save_folder=save_dir,scheduler=args.scheduler,model_name=args.model_name,\
-            benchmark=args.benchmark,AJI=False, save_best=args.save_best,save_all_ep=args.save_all_ep,device=device,num_classes=N_CLASSES)
+    optimizer = torch.optim.SGD(model.parameters(),lr=learning_rate,momentum=moment,weight_decay=wd)
+    
+    train_fully_supervised(model=model,n_epochs=n_epochs,train_loader=dataloader_train,val_loader=dataloader_val,aji_loader=dataloader_val_aji,\
+        criterion=criterion,optimizer=optimizer,save_folder=save_dir,scheduler=scheduler,model_name=model_name,\
+            benchmark=benchmark,AJI=aji, save_best=save_best,save_all_ep=save_all_ep,device=device,num_classes=N_CLASSES)
 
 
     
