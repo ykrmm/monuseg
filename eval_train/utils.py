@@ -109,45 +109,6 @@ def compute_transformations_batch(x,model,angle,reshape=False,\
         
     return loss,acc  
 
-def compute_scale_equiv_batch(x,model,size=(224,224), mode = 'nearest',\
-                                  criterion=nn.KLDivLoss(reduction='batchmean'),Loss=None,device='cpu',plot=False):
-    """
-       This function compute the equivariance loss with the scale transformation for a batch of images. 
-       It also give the accuracy between the output produce by the original image and the outpute produce by the 
-       scaled image.
-
-       size : (int,int) Size of the resized image
-       mode (str) – algorithm used for upsampling: 'nearest' | 'linear' | 'bilinear' | 'bicubic' | 'trilinear' | 'area'. Default: 'nearest'
-       criterion : KL divergence / L1 Loss / MSE Loss
-       Loss : 'str' ; 'KL' or 'CE' or None
-       plot = True for debug
-    """
-    x = x.to(device)
-    original_size = x.size()[2],x.size()[3] # Save the original size of the input data 
-    resized_x = F.interpolate(x,size,mode=mode) # Resize the image
-    logsoftmax = nn.LogSoftmax(dim=1) #LogSoftmax using instead of softmax then log.
-    softmax = nn.Softmax(dim=1)
-
-    try:
-        pred_x = model(x.to(device))['out'] # a prediction of the original images.
-        pred_resized_x = model(resized_x.to(device))['out'] # a prediction of the rotated images.
-    except:
-        pred_x = model(x.to(device))
-        pred_resized_x = model(resized_x.to(device))    
-    pred_resized_x = F.interpolate(pred_resized_x,original_size,mode=mode)  # Resize the transformed input to the original size
-    if Loss=='KL':
-        loss = criterion(logsoftmax(pred_resized_x.cpu()),softmax(pred_x.cpu())) #KL divergence between the two predictions
-        loss = loss/ (size[0]*size[0]) # Divide by the number of pixel in the image. Essential for batchmean mode in KLDiv
-                                        # MAY BE WRONG !!!
-    elif Loss == 'CE':
-        loss = criterion(pred_resized_x.cpu(),pred_x.argmax(dim=1).detach().cpu()) # Use the prediction on the original image as GTruth.  
-    else:
-        loss = criterion(pred_resized_x.cpu(),pred_x.cpu()) # For loss L1, MSE…    
-    acc = scores(pred_resized_x.argmax(dim=1).detach().cpu(),pred_x.argmax(dim=1).detach().cpu())["Pixel Accuracy"]
-    # compare the pred on the original images and the pred on the rotated images put back in place
-        
-        
-    return loss,acc  
 
 def eval_accuracy_equiv(model,val_loader,criterion=nn.KLDivLoss(reduction='batchmean'),\
                         nclass=21,device='cpu',Loss='KL',plot=True,angle_max=30,random_angle=False):

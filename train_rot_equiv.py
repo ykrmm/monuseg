@@ -1,5 +1,5 @@
 from dataset_utils import MoNuSegDataset,split_dataset,Compose,RandomResize,RandomCrop,RandomPiRotate,\
-    RandomHorizontalFlip,RandomRotate,CenterCrop,ToTensor,Normalize
+    RandomHorizontalFlip,RandomRotate,CenterCrop,ToTensor,Normalize,RandomAffine
 import torch
 from torchvision import models
 import torch.nn as nn
@@ -106,12 +106,16 @@ def main():
     size_img = args.size_img
     size_crop = args.size_crop
     if args.scale:
-        resize = 1.2
-        size_max=size_img*resize
+        min_size = 0.7
+        resize = 1.3
+        size_max=int(size_img*resize)
+        size_min = size_crop
+        size_img = size_min
         
     else:
         resize = 1
         size_max=size_max=size_img*resize
+
     if args.rotate:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
@@ -119,13 +123,15 @@ def main():
         RandomPiRotate(p_rotate=0.25),
         RandomCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
+        RandomAffine(p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0))
         ]
         )
     else:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
         RandomCrop(size_crop),
-        RandomHorizontalFlip(flip_prob=0.5)
+        RandomHorizontalFlip(flip_prob=0.5),
+        RandomAffine(p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0))
         ])
         
 
@@ -191,7 +197,7 @@ def main():
 
     train_rot_equiv(model,args.n_epochs,dataloader_train_sup,train_dataset_unsup,dataloader_val,criterion_supervised,optimizer,\
         scheduler=args.scheduler,Loss=args.Loss,gamma=args.gamma,batch_size=args.batch_size,save_folder=save_dir,\
-            model_name=args.model_name,benchmark=args.benchmark,angle_max=args.angle_max,pi_rotate=args.pi_rotate,AJI=True,\
+            model_name=args.model_name,benchmark=args.benchmark,angle_max=args.angle_max,pi_rotate=args.pi_rotate,AJI=False,\
                 aji_loader=dataloader_val_aji,eval_every=args.eval_every,save_all_ep=args.save_all_ep,save_best=args.save_best\
             ,rot_cpu=args.rot_cpu,device=device,num_classes=N_CLASSES)
 
