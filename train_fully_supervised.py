@@ -1,6 +1,6 @@
 from dataset_utils.my_transforms import ColorJitter
 from dataset_utils import MoNuSegDataset,split_dataset,Compose,RandomResize,RandomCrop,RandomPiRotate,\
-    RandomHorizontalFlip,RandomRotate,CenterCrop,ToTensor,Normalize
+    RandomHorizontalFlip,RandomRotate,CenterCrop,ToTensor,Normalize,RandomAffine
 import torch
 from torchvision import models
 import torch.nn as nn
@@ -107,8 +107,11 @@ def main():
     size_img = args.size_img
     size_crop = args.size_crop
     if args.scale:
+        min_size = 0.7
         resize = 1.3
-        size_max=size_img*resize
+        size_max=int(size_img*resize)
+        size_min = size_crop
+        size_img = size_min
         
     else:
         resize = 1
@@ -122,7 +125,7 @@ def main():
         RandomPiRotate(p_rotate=0.25),
         RandomCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
-        #ColorJitter(brightness=jitter,contrast=jitter,saturation=jitter)
+        RandomAffine(p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0))
         ]
         )
     else:
@@ -130,6 +133,7 @@ def main():
         RandomResize(min_size=size_img,max_size=size_max),
         RandomCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
+        RandomAffine(p=0.25)
         #ColorJitter(brightness=10,contrast=10,saturation=10)
         ])
         
@@ -140,7 +144,7 @@ def main():
     # ------------
 
     train_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='train',transforms=transforms_train,target_size=args.target_size,\
-        stride=args.stride,binary=True,normalize=False)
+        stride=args.stride,binary=True,normalize=True)
     if args.entire_image:
         test_dataset = MoNuSegDataset(args.dataroot_monuseg,image_set='test',load_entire_image=True,binary=True)
         test_dataset_aji = MoNuSegDataset(args.dataroot_monuseg,image_set='test',load_entire_image=True,binary=False)

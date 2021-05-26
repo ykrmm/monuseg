@@ -40,13 +40,15 @@ class RandomResize(object):
             max_size = min_size
         self.max_size = max_size
 
-    def __call__(self, image, target):
+    def __call__(self, image, mask):
         if self.min_size == self.max_size:
-            return image,target
+            return image,mask
         size = random.randint(self.min_size, self.max_size)
         image = F.resize(image, size)
-        target = F.resize(target, size, interpolation=Image.NEAREST)
-        return image, target
+        mask = torch.unsqueeze(mask,0)
+        mask = F.resize(mask, size, interpolation=Image.NEAREST)
+        mask = mask.squeeze()
+        return image, mask
 
 class RandomRotate(object):
     def __init__(self,angle_max,p_rotate,expand):
@@ -166,12 +168,12 @@ class RandomAffine(object):
         self.affine_prob = p
 
     def __call__(self,image,mask):
-        if random.random() < self.p:
+        if random.random() < self.affine_prob:
             angle = np.random.randint(self.angle-10,self.angle+10)
-            image = F.affine(image, angle = angle, translate=self.translate, scale = self.scale, share = self.share)
+            image = F.affine(image, angle = angle, translate=self.translate, scale = self.scale,shear=self.shear)
             mask = torch.unsqueeze(mask,0)
-            mask = F.affine(mask, angle = angle, translate=self.translate, scale = self.scale, share = self.share)
-            mask.squeeze()
+            mask = F.affine(mask, angle = angle, translate=self.translate, scale = self.scale, shear=self.shear)
+            mask = mask.squeeze()
         return image,mask
     
 
