@@ -34,7 +34,7 @@ def main():
     parser = ArgumentParser()
     
     # Model and eval
-    parser.add_argument('--config', default='fully_sup_config.yaml', type=str,help="Yaml configuration files")
+    parser.add_argument('--config', default='config/fully_sup_config.yaml', type=str,help="Yaml configuration files")
     args = parser.parse_args()
 
 
