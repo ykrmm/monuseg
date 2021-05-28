@@ -32,7 +32,7 @@ def main():
     # ------------
     parser = ArgumentParser()
     # Yaml config file
-    parser.add_argument('--config', default='rot_equiv_config.yaml', type=str,help="Yaml configuration files")
+    parser.add_argument('--config', default='config/rot_equiv_config.yaml', type=str,help="Yaml configuration files")
     args = parser.parse_args()
 
 
@@ -141,7 +141,7 @@ def main():
         RandomPiRotate(p_rotate=0.25),
         RandomCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
-        RandomAffine(p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0))
+        #RandomAffine(p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0))
         ]
         )
     else:
@@ -215,7 +215,7 @@ def main():
 
     train_rot_equiv(model,n_epochs,dataloader_train_sup,train_dataset_unsup,dataloader_val,criterion_supervised,optimizer,\
         scheduler=scheduler,Loss=Loss,gamma=gamma,batch_size=batch_size,save_folder=save_dir,\
-            model_name=model_name,benchmark=benchmark,angle_max=angle_max,pi_rotate=pi_rotate,AJI=False,\
+            model_name=model_name,benchmark=benchmark,angle_max=angle_max,pi_rotate=pi_rotate,AJI=aji,\
                 aji_loader=dataloader_val_aji,eval_every=eval_every,save_all_ep=save_all_ep,save_best=save_best\
             ,rot_cpu=rot_cpu,device=device,num_classes=N_CLASSES)
 
