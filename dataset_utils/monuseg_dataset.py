@@ -75,8 +75,11 @@ class MoNuSegDataset(Dataset):
         mask = to_tensor_target(mask,binary=self.binary)
         # Apply a fixed rotation for test time:
         if self.fixing_rotate:
-            image = TF.rotate(image,angle=self.angle_fix)
-            mask = TF.rotate(mask,angle=self.angle_fix)
+            image = TF.rotate(image,angle=self.angle_fix,expand=True)
+            mask = torch.unsqueeze(mask,0)
+            mask = TF.rotate(mask,angle=self.angle_fix,expand=True)
+            mask = mask.squeeze()
+            
         
         if self.transforms is not None:
             image,mask = self.transforms(image,mask)

@@ -4,7 +4,7 @@ training:
     scheduler: True
     wd : 0.0002
     moment: 0.8 
-    batch_size: 19
+    batch_size: 17
     n_epochs: 50
     benchmark: True
     num_classes: 2 
@@ -18,7 +18,7 @@ model_config:
 
 
 data_augmentation: 
-  rotate: False
+  rotate: True
   scale: True
   size_img: 256
   size_crop: 240
@@ -27,7 +27,7 @@ data_augmentation:
 loader_gpu:
   nw: 4 # Num workers
   pm: True # Pin memory
-  gpu: 3 # Device to use 
+  gpu: 1 # Device to use 
 
 
 dataset: 

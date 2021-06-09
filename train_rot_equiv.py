@@ -7,9 +7,10 @@ from eval_train import train_rot_equiv
 from argparse import ArgumentParser
 import torch.utils.data as tud
 import argparse
-from eval_train import create_save_directory,save_hparams
+from eval_train import create_save_directory,save_hparams,compute_AJI
 from model import CNN3
 import yaml
+from os.path import join
 # CONSTANTS
 
 
@@ -141,7 +142,7 @@ def main():
         RandomPiRotate(p_rotate=0.25),
         RandomCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
-        #RandomAffine(p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0))
+        RandomAffine(p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0))
         ]
         )
     else:
@@ -218,6 +219,16 @@ def main():
             model_name=model_name,benchmark=benchmark,angle_max=angle_max,pi_rotate=pi_rotate,AJI=aji,\
                 aji_loader=dataloader_val_aji,eval_every=eval_every,save_all_ep=save_all_ep,save_best=save_best\
             ,rot_cpu=rot_cpu,device=device,num_classes=N_CLASSES)
+
+    model = torch.load(join(save_dir,model_name),map_location=device)
+    l_angles = [180,210,240,270,300,330,0,30,60,90,120,150]
+    l_iou = []
+    for angle in l_angles:
+        test_dataset_aji = MoNuSegDataset(dataroot_monuseg,image_set='test',load_entire_image=True,binary=False,fixing_rotate=True,angle_fix=angle)
+        dataloader_val = torch.utils.data.DataLoader(test_dataset_aji,num_workers=nw,pin_memory=pm,\
+            batch_size=1)
+        aji,aji_mean = compute_AJI(model,dataloader_val,device,dist_factor=0.3,threshold=54,clean_prediction=False,it_bg=0,it_opening=0)
+        print('EVAL FOR ANGLE',angle,': AJI',aji_mean)
 
 
 if __name__ == '__main__':
