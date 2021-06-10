@@ -4,17 +4,17 @@ training:
     scheduler: True
     wd : 0.0002
     moment: 0.8 
-    batch_size: 19 
+    batch_size: 17 
     n_epochs: 55
     benchmark: True
     num_classes: 2 
 
 
 equiv_training:
-  pi_rotate: True # Rotation equivariance is only angle 90,180,270
+  pi_rotate: False # Rotation equivariance is only angle 90,180,270
   Loss: 'KL' # Loss used for equivariance cost function (KL or CE)
-  multi_task: True # Multi task training dataset_equiv = dataset_supervised
-  gamma: 0.9 # Loss balancing parameters: gamma*loss_equiv + (1-gamma)*loss_sup
+  multi_task: False # Multi task training dataset_equiv = dataset_supervised
+  gamma: 0.85 # Loss balancing parameters: gamma*loss_equiv + (1-gamma)*loss_sup
   eval_every: 30 # Eval Performances on different input rotation angles every n epochs.
 
 
@@ -22,7 +22,7 @@ model_config:
   model: 'FCN'
   pretrained: False # pretrained fcn 
   eval_angle: False
-  aji: True
+  aji: False
 
 
 data_augmentation: 
@@ -35,11 +35,11 @@ data_augmentation:
 loader_gpu:
   nw: 4 # Num workers
   pm: True # Pin memory
-  gpu: 0 # Device to use 
+  gpu: 1 # Device to use 
   rot_cpu: True # Rotation on CPU to use less GPU memory 
 
 dataset: 
-  split: False
+  split: True
   split_ratio: 0.1 # Percentage of supervised data 
   dataroot_monuseg: '/share/DEEPLEARNING/datasets/monuseg'
   entire_image: True # Eval on the complete image 1000x1000 size

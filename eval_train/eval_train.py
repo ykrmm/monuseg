@@ -332,8 +332,8 @@ def train_rot_equiv(model,n_epochs,train_loader_sup,train_dataset_unsup,val_load
     save_curves(path=save_folder,combine_loss_train=combine_loss_train,loss_train_sup=loss_train_sup,\
     loss_train_unsup=loss_train_unsup,iou_train=iou_train,accuracy_train=accuracy_train,equiv_accuracy_train=equiv_accuracy_train,\
     combine_loss_test=combine_loss_test,loss_test_unsup=loss_test_unsup,equiv_accuracy_test=equiv_accuracy_test,\
-    loss_test_sup= loss_test_sup,iou_test=iou_test,accuracy_test=accuracy_test,\
-        dc_train=dc_train,dc_test=dc_test,f1_train=f1_train,f1_test=f1_test)
+    loss_test_sup= loss_test_sup,iou_test=iou_test,accuracy_test=accuracy_test)#,\
+        #dc_train=dc_train,dc_test=dc_test,f1_train=f1_train,f1_test=f1_test)
 
 
 

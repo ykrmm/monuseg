@@ -137,7 +137,8 @@ def main():
         #RandomPiRotate(p_rotate=0.25),
         RandomCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
-        RandomAffine(p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0))
+        RandomAffine(p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0)),
+        RandomResize(min_size=size_crop,max_size=size_crop),
         ]
         )
     else:
@@ -209,7 +210,7 @@ def main():
         criterion=criterion,optimizer=optimizer,save_folder=save_dir,scheduler=scheduler,model_name=model_name,\
             benchmark=benchmark,AJI=aji, save_best=save_best,save_all_ep=save_all_ep,device=device,num_classes=N_CLASSES)
 
-    model = torch.load(join(save_dir,model_name),map_location=device)
+    model = torch.load(join(save_dir,model_name+'.pt'),map_location=device)
     l_angles = [180,210,240,270,300,330,0,30,60,90,120,150]
     l_iou = []
     for angle in l_angles:

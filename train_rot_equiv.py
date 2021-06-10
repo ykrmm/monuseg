@@ -220,7 +220,7 @@ def main():
                 aji_loader=dataloader_val_aji,eval_every=eval_every,save_all_ep=save_all_ep,save_best=save_best\
             ,rot_cpu=rot_cpu,device=device,num_classes=N_CLASSES)
 
-    model = torch.load(join(save_dir,model_name),map_location=device)
+    model = torch.load(join(save_dir,model_name+'.pt'),map_location=device)
     l_angles = [180,210,240,270,300,330,0,30,60,90,120,150]
     l_iou = []
     for angle in l_angles:

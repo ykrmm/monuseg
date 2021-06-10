@@ -4,7 +4,7 @@ training:
     scheduler: True
     wd : 0.0002
     moment: 0.8 
-    batch_size: 17
+    batch_size: 19
     n_epochs: 50
     benchmark: True
     num_classes: 2 
@@ -14,11 +14,11 @@ model_config:
   model: 'FCN'
   pretrained: False
   eval_angle: False
-  aji: True # Aji metric Evaluation during training
+  aji: False # Aji metric Evaluation during training
 
 
 data_augmentation: 
-  rotate: True
+  rotate: False
   scale: True
   size_img: 256
   size_crop: 240
@@ -27,7 +27,7 @@ data_augmentation:
 loader_gpu:
   nw: 4 # Num workers
   pm: True # Pin memory
-  gpu: 1 # Device to use 
+  gpu: 2 # Device to use 
 
 
 dataset: 
@@ -42,5 +42,5 @@ dataset:
 save_config: 
   model_name: 'fully_supervised_monuseg'
   save_dir: '/share/homes/karmimy/equiv/save_model/fully_supervised_monuseg'
-  save_all_ep: False
-  save_best: True                     # If true will only save the best epoch model
+  save_all_ep: True
+  save_best: False                     # If true will only save the best epoch model

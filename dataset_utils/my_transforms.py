@@ -42,6 +42,10 @@ class RandomResize(object):
 
     def __call__(self, image, mask):
         if self.min_size == self.max_size:
+            image = F.resize(image, (self.min_size,self.min_size))
+            mask = torch.unsqueeze(mask,0)
+            mask = F.resize(mask, (self.min_size,self.min_size), interpolation=Image.NEAREST)
+            mask = mask.squeeze()
             return image,mask
         size = random.randint(self.min_size, self.max_size)
         image = F.resize(image, size)
