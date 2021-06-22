@@ -14,7 +14,7 @@ from eval_train import aji_metric
 ##############
 
 def get_criterion(key:str,reduction='batchmean') -> dict:
-    d = {'CE':nn.CrossEntropyLoss(ignore_index=4),'KL':nn.KLDivLoss(reduction = reduction, log_target = False),\
+    d = {'CE':nn.CrossEntropyLoss(ignore_index=5),'KL':nn.KLDivLoss(reduction = reduction, log_target = False),\
         'L1':nn.L1Loss(reduction='mean'),'MSE':nn.MSELoss()}
     return d[key]
 ###########################################################################################################################|

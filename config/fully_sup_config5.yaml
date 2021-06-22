@@ -18,7 +18,7 @@ model_config:
 
 
 data_augmentation: 
-  rotate: True
+  rotate: False
   scale: True
   size_img: 256
   size_crop: 240

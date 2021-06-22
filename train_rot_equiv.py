@@ -33,7 +33,7 @@ def main():
     # ------------
     parser = ArgumentParser()
     # Yaml config file
-    parser.add_argument('--config', default='config/rot_equiv_config.yaml', type=str,help="Yaml configuration files")
+    parser.add_argument('--config', default='config/rot_equiv_config5.yaml', type=str,help="Yaml configuration files")
     args = parser.parse_args()
 
 
@@ -138,9 +138,9 @@ def main():
     if rotate:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
-        #RandomRotate(angle_max=angle_max,p_rotate=0.25,expand=True),
-        RandomPiRotate(p_rotate=0.25),
-        RandomCrop(size_crop),
+        RandomRotate(angle_max=angle_max,p_rotate=0.25,expand=True),
+        #RandomPiRotate(p_rotate=0.25),
+        CenterCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
         RandomAffine(p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0))
         ]
@@ -148,7 +148,7 @@ def main():
     else:
         transforms_train = Compose([
         RandomResize(min_size=size_img,max_size=size_max),
-        RandomCrop(size_crop),
+        CenterCrop(size_crop),
         RandomHorizontalFlip(flip_prob=0.5),
         RandomAffine(p=0.25,angle=40,translate=(0.25,0.5),scale=1.5,shear=(-45.0,45.0))
         ])
@@ -203,9 +203,9 @@ def main():
     # ------------
     save_dir = create_save_directory(save_dir)
     print('model will be saved in',save_dir)
-    save_hparams(args,save_dir)
+    save_hparams(arguments,save_dir)
     print('PARAMETERS : ')
-    print(args)
+    print(arguments)
     print('-------------------------------------------------------------------')
     # ------------
     # training

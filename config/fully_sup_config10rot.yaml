@@ -32,7 +32,7 @@ loader_gpu:
 
 dataset: 
   split: True
-  split_ratio: 0.05                   # Percentage of supervised data 
+  split_ratio: 0.1                   # Percentage of supervised data 
   dataroot_monuseg: '/share/DEEPLEARNING/datasets/monuseg'
   entire_image: True                 # Eval on the complete image 1000x1000 size
   target_size: '256'                 # arget size used for spliting images
