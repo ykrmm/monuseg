@@ -14,7 +14,7 @@ equiv_training:
   pi_rotate: False # Rotation equivariance is only angle 90,180,270
   Loss: 'CE' # Loss used for equivariance cost function (KL or CE)
   multi_task: False # Multi task training dataset_equiv = dataset_supervised
-  gamma: 0.3 # Loss balancing parameters: gamma*loss_equiv + (1-gamma)*loss_sup
+  gamma: 0.9 # Loss balancing parameters: gamma*loss_equiv + (1-gamma)*loss_sup
   eval_every: 30 # Eval Performances on different input rotation angles every n epochs.
 
 
